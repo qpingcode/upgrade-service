@@ -8,6 +8,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
+import me.qping.upgrade.client.handler.ClientOnlineHandler;
+import me.qping.upgrade.client.handler.ShellCommandHandler;
 import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.message.Client;
 import me.qping.upgrade.common.message.Msg;
@@ -90,6 +92,7 @@ public class UpgradeClient implements Client {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         int lastIndex = path.lastIndexOf("/") + 1;
         path = path.substring(0, lastIndex);
 
@@ -103,6 +106,11 @@ public class UpgradeClient implements Client {
         long clientIdNum = Long.parseLong(id);
         clientId = clientIdNum;
         idGen = new SnowFlakeId(clientIdNum,  1);
+
+        if(clientId < 1){
+            throw new RuntimeException("客户端ID不能小于1");
+        }
+
     }
 
     public static void main(String[] args) {
@@ -129,7 +137,7 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast("decoder", new ObjDecoder(Msg.class));
                         ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
                         ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + clientId , UpgradeClient.this));
-                        ch.pipeline().addLast(new AckInboundMiddleware("客户端：" + clientId));
+                        ch.pipeline().addLast(new ShellCommandHandler("客户端：" + clientId, UpgradeClient.this));
                     }
 
                 });
@@ -199,23 +207,6 @@ public class UpgradeClient implements Client {
             e.printStackTrace();
             System.out.println("连接失败：" + e.getMessage());
         }
-
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-                try {
-                    Thread.sleep(5000);
-                    Msg msg = Msg.request(UpgradeClient.this.getMessageId(), 1);
-                    System.out.println("发送一个消息");
-                    UpgradeClient.this.sendMsg(msg);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
     }
 
 

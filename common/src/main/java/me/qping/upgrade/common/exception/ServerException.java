@@ -7,11 +7,11 @@ package me.qping.upgrade.common.exception;
  * @Date 2021/7/7 15:48
  * @Version 1.0
  **/
-public class ServerRegException extends Exception{
+public class ServerException extends Exception{
 
     int responseCode;
 
-    public ServerRegException(int responseCode, String message) {
+    public ServerException(int responseCode, String message) {
         super(message);
         this.responseCode = responseCode;
     }

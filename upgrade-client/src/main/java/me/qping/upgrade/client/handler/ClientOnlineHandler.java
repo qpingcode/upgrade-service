@@ -1,4 +1,4 @@
-package me.qping.upgrade.client;
+package me.qping.upgrade.client.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import me.qping.upgrade.common.message.Client;

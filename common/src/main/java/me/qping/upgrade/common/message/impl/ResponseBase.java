@@ -20,4 +20,11 @@ public class ResponseBase implements Response{
         res.setMessage("请求超时！");
         return res;
     }
+
+    public static ResponseBase of(int code, String message) {
+        ResponseBase res = new ResponseBase();
+        res.setCode(code);
+        res.setMessage(message);
+        return res;
+    }
 }

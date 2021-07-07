@@ -18,8 +18,11 @@ public class  MsgType {
     public static final byte REQUEST = 4;       // 请求
     public static final byte RESPONSE = 5;      // 回应
 
-    public static final byte FILE_DESC_INFO = 6;            // 文件传输请求
-    public static final byte FILE_BURST_INSTRUCT = 7;       // 文件传输指令
-    public static final byte FILE_BURST_DATA = 8;           // 文件传输数据
+    public static final byte SHELL_COMMAND = 9;
+    public static final byte SHELL_COMMAND_RESPONSE = 10;
+
+    public static final byte FILE_DESC_INFO = 16;            // 文件传输请求
+    public static final byte FILE_BURST_INSTRUCT = 17;       // 文件传输指令
+    public static final byte FILE_BURST_DATA = 18;           // 文件传输数据
 
 }

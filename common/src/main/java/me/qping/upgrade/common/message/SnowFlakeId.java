@@ -9,10 +9,10 @@ public class SnowFlakeId {
     //12位的序列号
     private long sequence;
 
-    public SnowFlakeId(long workerId, long sequence){
+    public SnowFlakeId(long workerId, long sequence) {
         // sanity check for workerId
         if (workerId > maxWorkerId || workerId < 0) {
-            throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0",maxWorkerId));
+            throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0", maxWorkerId));
         }
 //        if (datacenterId > maxDatacenterId || datacenterId < 0) {
 //            throw new IllegalArgumentException(String.format("datacenter Id can't be greater than %d or less than 0",maxDatacenterId));
@@ -30,15 +30,16 @@ public class SnowFlakeId {
     private long twepoch = 1288834974657L;
 
     //长度为5位
-    public  static long workerIdBits = 10L;
+    public static long workerIdBits = 10L;
     public static long datacenterIdBits = 0L;
     //最大值
     public static long maxWorkerId = -1L ^ (-1L << workerIdBits);
     public static long maxDatacenterId = -1L ^ (-1L << datacenterIdBits);
 
     public static void main(String[] args) {
-        System.out.println(maxDatacenterId);
+        System.out.println(maxWorkerId);
     }
+
     //序列号id长度
     private long sequenceBits = 12L;
     //序列号最大值
@@ -54,15 +55,15 @@ public class SnowFlakeId {
     //上次时间戳，初始值为负数
     private long lastTimestamp = -1L;
 
-    public long getWorkerId(){
+    public long getWorkerId() {
         return workerId;
     }
 
-    public long getDatacenterId(){
+    public long getDatacenterId() {
         return datacenterId;
     }
 
-    public long getTimestamp(){
+    public long getTimestamp() {
         return System.currentTimeMillis();
     }
 
@@ -115,7 +116,7 @@ public class SnowFlakeId {
     }
 
     //获取系统时间戳
-    private long timeGen(){
+    private long timeGen() {
         return System.currentTimeMillis();
     }
 

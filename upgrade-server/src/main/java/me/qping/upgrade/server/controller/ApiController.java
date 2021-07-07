@@ -1,12 +1,16 @@
 package me.qping.upgrade.server.controller;
 
+import io.netty.channel.Channel;
+import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.session.Session;
+import me.qping.upgrade.common.session.SessionUtil;
 import me.qping.upgrade.server.netty.UpgradeServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,15 +29,37 @@ public class ApiController {
     @RequestMapping(value = "/client/list")
     @ResponseBody
     public List<Session> clientList(){
-        return upgradeServer.getSessionList();
+        List<Session> list = new ArrayList<>();
 
+        for(Long clientId : SessionUtil.getClientChannelMap().keySet()){
+            Session session = SessionUtil.getSession(clientId);
+            list.add(session);
+        }
+        return list;
     }
 
     @RequestMapping(value = "/client/kick")
     @ResponseBody
     public boolean kickClient(long clientId){
-        return upgradeServer.kickSession(clientId);
+        Channel channel = SessionUtil.getClientChannelMap().get(clientId);
 
+        if(channel == null){
+            return false;
+        }
+
+        SessionUtil.unBindSession(channel);
+        channel.close();
+        return true;
+    }
+
+    @RequestMapping(value = "/client/executeShell")
+    @ResponseBody
+    public void executeShell(long clientId, String shell){
+        try {
+            SessionUtil.executeShell(clientId, shell);
+        } catch (ServerException e) {
+            e.printStackTrace();
+        }
     }
 
 }

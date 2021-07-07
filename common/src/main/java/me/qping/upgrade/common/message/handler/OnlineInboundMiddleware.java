@@ -38,7 +38,7 @@ public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapt
                 sendPong(ctx);
                 break;
             case PONG:
-                System.out.println(name + " get  pong  msg  from" + ctx.channel().remoteAddress());
+//                System.out.println(name + " get  pong  msg  from" + ctx.channel().remoteAddress());
                 break;
             default:
                 super.channelRead(ctx, msg);
@@ -49,7 +49,7 @@ public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapt
     protected void sendPing(ChannelHandlerContext ctx) {
         ctx.channel().writeAndFlush(Msg.ping());
         heartbeatCount++;
-        System.out.println(name + " send ping msg to " + ctx.channel().remoteAddress() + " , count :" + heartbeatCount);
+//        System.out.println(name + " send ping msg to " + ctx.channel().remoteAddress() + " , count :" + heartbeatCount);
     }
 
     protected void sendPong(ChannelHandlerContext ctx) {

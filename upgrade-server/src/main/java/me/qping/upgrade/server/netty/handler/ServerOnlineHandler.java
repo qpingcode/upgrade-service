@@ -1,8 +1,8 @@
-package me.qping.upgrade.server.netty;
+package me.qping.upgrade.server.netty.handler;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import me.qping.upgrade.common.exception.ServerRegException;
+import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.handler.OnlineInboundMiddleware;
 import me.qping.upgrade.common.message.impl.Response;
@@ -52,13 +52,13 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
             long clientId = msg.getClientId();
 
             if(clientId <= 0){
-                throw new ServerRegException(Response.ERR_CLIENT_ID_ILLEGAL, "客户端上线失败，id非法：" + clientId);
+                throw new ServerException(Response.ERR_REG_CLIENT_ID_ILLEGAL, "客户端上线失败，id非法：" + clientId);
             }
 
             // 重复上线
             Session old = SessionUtil.getSession(clientId);
             if(old != null){
-                throw new ServerRegException(Response.ERR_REG_REPEAT, "客户端上线失败，重复上线，上线时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(old.getCreateDate()));
+                throw new ServerException(Response.ERR_REG_REPEAT, "客户端上线失败，重复上线，上线时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(old.getCreateDate()));
             }
 
             // 将客户端基本信息保存到 channel 的 attr 中
@@ -73,7 +73,7 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
             response.setMessage("上线成功，时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(session.getCreateDate()));
             ctx.writeAndFlush(Msg.registerResponse(msg.getMessageId(), response));
 
-        }catch (ServerRegException ex){
+        }catch (ServerException ex){
             System.err.println(ex.getMessage());
 
             ResponseBase response = new ResponseBase();
