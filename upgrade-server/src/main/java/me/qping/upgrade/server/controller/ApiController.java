@@ -1,6 +1,6 @@
 package me.qping.upgrade.server.controller;
 
-import me.qping.upgrade.server.bean.ClientInfo;
+import me.qping.upgrade.common.session.Session;
 import me.qping.upgrade.server.netty.UpgradeServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -24,15 +24,15 @@ public class ApiController {
 
     @RequestMapping(value = "/client/list")
     @ResponseBody
-    public List<ClientInfo> clientList(){
-        return upgradeServer.clientList();
+    public List<Session> clientList(){
+        return upgradeServer.getSessionList();
 
     }
 
     @RequestMapping(value = "/client/kick")
     @ResponseBody
     public boolean kickClient(long clientId){
-        return upgradeServer.clientKick(clientId);
+        return upgradeServer.kickSession(clientId);
 
     }
 

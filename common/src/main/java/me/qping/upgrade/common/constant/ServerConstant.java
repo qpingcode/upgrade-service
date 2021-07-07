@@ -23,8 +23,4 @@ public class ServerConstant {
     public static final int IdleThenPing = 5;                 // 客户端判断 5s 没有交互，就发一个心跳
 
 
-
-    public static final String ChannelAttrKeyClient = "client";
-
-
 }

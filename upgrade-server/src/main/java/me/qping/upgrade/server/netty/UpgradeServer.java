@@ -8,13 +8,14 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.AttributeKey;
+import me.qping.upgrade.common.session.Attributes;
 import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
 import me.qping.upgrade.common.message.handler.AckInboundMiddleware;
-import me.qping.upgrade.server.bean.ClientInfo;
+import me.qping.upgrade.common.session.Session;
+import me.qping.upgrade.common.session.SessionUtil;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -33,7 +34,7 @@ public class UpgradeServer {
     EventLoopGroup bossGroup = new NioEventLoopGroup();
     EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public static final ConcurrentHashMap<Long, Channel> clientChannelMap = new ConcurrentHashMap<>();
+
 
     ChannelFuture channelFuture;
 
@@ -90,46 +91,19 @@ public class UpgradeServer {
         server.start();
     }
 
-    public static void attachClient(Channel channel, ClientInfo c){
 
-        if(c == null){
-            return;
-        }
-
-        c.setCreateDate(new Date());
-
-        AttributeKey<ClientInfo> key = AttributeKey.valueOf(ChannelAttrKeyClient);
-        channel.attr(key).set(c);
-
-        clientChannelMap.put(c.getId(), channel);
-    }
-
-    public static ClientInfo getClient(long clientId){
-        Channel channel = clientChannelMap.get(clientId);
-
-        if(channel == null || !channel.isActive()){
-            return null;
-        }
-
-        AttributeKey<ClientInfo> key = AttributeKey.valueOf(ChannelAttrKeyClient);
-        if(!channel.hasAttr(key)){
-            return null;
-        }
-
-        return channel.attr(key).get();
-    }
 
     /**
      * 获取所有在线客户端
      * @return
      */
-    public List<ClientInfo> clientList() {
+    public List<Session> getSessionList() {
 
-        List<ClientInfo> list = new ArrayList<>();
+        List<Session> list = new ArrayList<>();
 
-        for(Long clientId : clientChannelMap.keySet()){
-            ClientInfo clientInfo = getClient(clientId);
-            list.add(clientInfo);
+        for(Long clientId : SessionUtil.getClientChannelMap().keySet()){
+            Session session = SessionUtil.getSession(clientId);
+            list.add(session);
         }
 
         return list;
@@ -142,21 +116,15 @@ public class UpgradeServer {
      *
      * todo 待修改，服务器下线后客户端又会重连
      */
-    public boolean clientKick(long clientId){
+    public boolean kickSession(long clientId){
 
-        Channel channel = clientChannelMap.get(clientId);
+        Channel channel = SessionUtil.getClientChannelMap().get(clientId);
 
         if(channel == null){
             return false;
         }
 
-        if(!channel.isActive()){
-            clientChannelMap.remove(channel);
-            return false;
-        }
-
-        // 踢下线
-        clientChannelMap.remove(channel);
+        SessionUtil.unBindSession(channel);
         channel.close();
         return true;
 
@@ -167,7 +135,7 @@ public class UpgradeServer {
      * @param client
      * @param file
      */
-    public void transferFile(ClientInfo client, String file){
+    public void transferFile(Session client, String file){
 
     }
 
@@ -176,7 +144,7 @@ public class UpgradeServer {
      * @param client
      * @param command
      */
-    public void executeShell(ClientInfo client, String command){
+    public void executeShell(Session client, String command){
 
     }
 

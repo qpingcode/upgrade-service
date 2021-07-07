@@ -1,4 +1,4 @@
-package me.qping.upgrade.server.bean;
+package me.qping.upgrade.common.session;
 
 import lombok.Data;
 
@@ -12,8 +12,8 @@ import java.util.Date;
  * @Version 1.0
  **/
 @Data
-public class ClientInfo {
-    long id;
+public class Session {
+    long clientId;
     String address;
     Date createDate;
 }

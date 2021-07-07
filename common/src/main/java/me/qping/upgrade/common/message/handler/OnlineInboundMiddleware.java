@@ -3,6 +3,7 @@ package me.qping.upgrade.common.message.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.ReferenceCountUtil;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.MsgFuture;
 
@@ -71,6 +72,7 @@ public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapt
                 handlerAllIdle(ctx);
                 break;
         }
+
     }
 
     @Override

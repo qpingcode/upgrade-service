@@ -2,17 +2,16 @@ package me.qping.upgrade.server.netty;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.AttributeKey;
 import me.qping.upgrade.common.exception.ServerRegException;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.handler.OnlineInboundMiddleware;
 import me.qping.upgrade.common.message.impl.Response;
 import me.qping.upgrade.common.message.impl.ResponseBase;
-import me.qping.upgrade.server.bean.ClientInfo;
+import me.qping.upgrade.common.session.Session;
+import me.qping.upgrade.common.session.SessionUtil;
 
 import java.text.SimpleDateFormat;
 
-import static me.qping.upgrade.server.netty.UpgradeServer.clientChannelMap;
 
 /**
  * @ClassName NettyServerHandler
@@ -30,13 +29,8 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
-        AttributeKey<ClientInfo> key = AttributeKey.valueOf("client");
-        if (!channel.hasAttr(key)) {
-            return;
-        }
-        ClientInfo clientInfo = channel.attr(key).get();
-        System.err.println("客户端下线：" + clientInfo.getId());
-        clientChannelMap.remove(clientInfo.getId());
+        SessionUtil.unBindSession(channel);
+
     }
 
 
@@ -62,24 +56,24 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
             }
 
             // 重复上线
-            ClientInfo old = UpgradeServer.getClient(clientId);
+            Session old = SessionUtil.getSession(clientId);
             if(old != null){
                 throw new ServerRegException(Response.ERR_REG_REPEAT,"客户端上线失败，重复上线，上线时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(old.getCreateDate()));
             }
 
             // 将客户端基本信息保存到 channel 的 attr 中
-            ClientInfo c = new ClientInfo();
-            c.setId(clientId);
-            c.setAddress(channel.remoteAddress().toString());
+            Session session = new Session();
+            session.setClientId(clientId);
+            session.setAddress(channel.remoteAddress().toString());
 
-            UpgradeServer.attachClient(channel, c);
+            SessionUtil.bindSession(session, channel);
 
             System.err.println("客户端上线: " + msg.getClientId());
 
             // 通知客户端操作成功
             ResponseBase response = new ResponseBase();
             response.setCode(Response.SUCCESS);
-            response.setMessage("上线成功，时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.getCreateDate()));
+            response.setMessage("上线成功，时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(session.getCreateDate()));
             ctx.writeAndFlush(Msg.registerResponse(msg.getMessageId(), response));
 
         }catch (ServerRegException ex){
