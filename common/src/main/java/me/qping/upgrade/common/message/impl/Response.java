@@ -24,6 +24,9 @@ public interface Response {
     // 重复注册
     int ERR_REG_REPEAT = 2;
 
+    // clientId 非法
+    int ERR_CLIENT_ID_ILLEGAL = 3;
+
 
     long getCode();
     String getMessage();

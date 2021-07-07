@@ -11,9 +11,15 @@ import java.io.Serializable;
  * @Version 1.0
  **/
 public class  MsgType {
-    public static final byte REGISTER = 0;
-    public static final byte PING = 1;
-    public static final byte PONG = 2;
-    public static final byte REQUEST = 3;
-    public static final byte RESPONSE = 4;
+    public static final byte REGISTER = 0;              // 客户端向服务端发起注册请求
+    public static final byte REGISTER_RESPONSE = 1;     // 服务端响应客户端的注册
+    public static final byte PING = 2;          // 客户端空闲时向服务端 ping
+    public static final byte PONG = 3;          // 服务端回应客户端ping 发出 pong
+    public static final byte REQUEST = 4;       // 请求
+    public static final byte RESPONSE = 5;      // 回应
+
+    public static final byte FILE_DESC_INFO = 6;            // 文件传输请求
+    public static final byte FILE_BURST_INSTRUCT = 7;       // 文件传输指令
+    public static final byte FILE_BURST_DATA = 8;           // 文件传输数据
+
 }

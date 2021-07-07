@@ -8,4 +8,8 @@ public interface Client {
     RetryPolicy getRetryPolicy();
     long getClientId();
     long getMessageId();
+
+    boolean isOnline();
+    void setOnline(boolean online);
+    void sendMsg(Msg msg);
 }

@@ -62,35 +62,35 @@
         <!-- ProtoStuff -->
 
         <!-- msgpack begin -->
-        <dependency>
-            <groupId>org.msgpack</groupId>
-            <artifactId>msgpack-core</artifactId>
-            <version>0.9.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.msgpack</groupId>-->
+            <!--<artifactId>msgpack-core</artifactId>-->
+            <!--<version>0.9.0</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>org.msgpack</groupId>
-            <artifactId>jackson-dataformat-msgpack</artifactId>
-            <version>0.9.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.msgpack</groupId>-->
+            <!--<artifactId>jackson-dataformat-msgpack</artifactId>-->
+            <!--<version>0.9.0</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.12.3</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.fasterxml.jackson.core</groupId>-->
+            <!--<artifactId>jackson-annotations</artifactId>-->
+            <!--<version>2.12.3</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.12.3</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.fasterxml.jackson.core</groupId>-->
+            <!--<artifactId>jackson-databind</artifactId>-->
+            <!--<version>2.12.3</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.12.3</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.fasterxml.jackson.core</groupId>-->
+            <!--<artifactId>jackson-core</artifactId>-->
+            <!--<version>2.12.3</version>-->
+        <!--</dependency>-->
         <!-- msgpack end -->
 
         <dependency>

@@ -1,13 +1,14 @@
-package me.qping.upgrade.common.message;
+package me.qping.upgrade.common.message.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
-import me.qping.upgrade.common.message.codec.MessagePackUtil;
+import me.qping.upgrade.common.message.Msg;
+import me.qping.upgrade.common.message.MsgFuture;
 
 import static me.qping.upgrade.common.constant.MsgType.*;
 
-public abstract class InboundMiddleware extends ChannelInboundHandlerAdapter {
+public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapter {
 
     protected String name;
 
@@ -15,7 +16,7 @@ public abstract class InboundMiddleware extends ChannelInboundHandlerAdapter {
     private int heartbeatCount = 0;
 
     //获取server and client 传入的值
-    public InboundMiddleware(String name) {
+    public OnlineInboundMiddleware(String name) {
         this.name = name;
     }
 
@@ -23,27 +24,26 @@ public abstract class InboundMiddleware extends ChannelInboundHandlerAdapter {
      * 继承ChannelInboundHandlerAdapter实现了channelRead就会监听到通道里面的消息
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Msg m = (Msg) msg;
         switch (m.getType()) {
             case REGISTER:
                 handlerRegister(ctx, m);
+                break;
+            case REGISTER_RESPONSE:
+                handlerRegisterResponse(ctx, m);
+                break;
             case PING:
                 sendPong(ctx);
                 break;
             case PONG:
                 System.out.println(name + " get  pong  msg  from" + ctx.channel().remoteAddress());
                 break;
-            case REQUEST:
-                handlerRequest(ctx, m);
-                break;
-            case RESPONSE:
-                handlerResponse(ctx, m);
-                break;
             default:
-                break;
+                super.channelRead(ctx, msg);
         }
     }
+
 
     protected void sendPing(ChannelHandlerContext ctx) {
         ctx.channel().writeAndFlush(Msg.ping());
@@ -55,12 +55,6 @@ public abstract class InboundMiddleware extends ChannelInboundHandlerAdapter {
         ctx.channel().writeAndFlush(Msg.pong());
         heartbeatCount++;
     }
-
-    public <T> T getResponse(Msg msg, Class<T> clazz){
-       return MessagePackUtil.toObject(msg.getBody(), clazz);
-    }
-
-
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt)
@@ -81,19 +75,19 @@ public abstract class InboundMiddleware extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        System.err.println( name +"  exception" + cause.toString());
+        System.err.println(name);
+        cause.printStackTrace();
         ctx.close();
     }
 
-    protected void handlerResponse(ChannelHandlerContext ctx, Msg msg) {
-        MsgFuture.recive(msg);
-    }
-
-    protected abstract void handlerRequest(ChannelHandlerContext ctx, Msg msg);
-
     protected void handlerRegister(ChannelHandlerContext ctx, Msg msg){
-        System.out.println(((Msg) msg).getClientId() + " register into Server");
+        System.out.println(((Msg) msg).getClientId() + " register");
     }
+
+    protected void handlerRegisterResponse(ChannelHandlerContext ctx, Msg msg) {
+        System.out.println(((Msg) msg).getClientId() + " register response");
+    }
+
     protected void handlerAllIdle(ChannelHandlerContext ctx) {
         System.err.println("---ALL_IDLE---");
     }

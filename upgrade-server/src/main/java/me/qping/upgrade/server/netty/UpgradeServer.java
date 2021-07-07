@@ -10,10 +10,11 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.AttributeKey;
 import me.qping.upgrade.common.constant.ServerConstant;
-import me.qping.upgrade.common.message.codec.MsgPackDecode;
-import me.qping.upgrade.common.message.codec.MsgPackEncode;
+import me.qping.upgrade.common.message.Msg;
+import me.qping.upgrade.common.message.codec.ObjDecoder;
+import me.qping.upgrade.common.message.codec.ObjEncoder;
+import me.qping.upgrade.common.message.handler.AckInboundMiddleware;
 import me.qping.upgrade.server.bean.ClientInfo;
-import me.qping.upgrade.server.netty.handler.NettyServerHandler;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -49,9 +50,10 @@ public class UpgradeServer {
                             ch.pipeline().addLast(new IdleStateHandler(IdleTimeoutThenClose,0,0));
                             ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(MaxFrameLength, 0, LengthFieldLength, 0, LengthFieldLength));
                             ch.pipeline().addLast(new LengthFieldPrepender(LengthFieldLength));
-                            ch.pipeline().addLast("decoder", new MsgPackDecode());
-                            ch.pipeline().addLast("encoder", new MsgPackEncode());
-                            ch.pipeline().addLast(new NettyServerHandler("中心端"));
+                            ch.pipeline().addLast("decoder", new ObjDecoder(Msg.class));
+                            ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
+                            ch.pipeline().addLast(new ServerOnlineHandler("中心端"));
+                            ch.pipeline().addLast(new AckInboundMiddleware("中心端"));
                         }
                     });
 

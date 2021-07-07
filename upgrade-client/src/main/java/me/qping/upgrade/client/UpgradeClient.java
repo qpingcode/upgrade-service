@@ -8,16 +8,19 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
-import me.qping.upgrade.client.handler.NettyClientHandler;
 import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.message.Client;
+import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.SnowFlakeId;
-import me.qping.upgrade.common.message.codec.MsgPackDecode;
-import me.qping.upgrade.common.message.codec.MsgPackEncode;
+import me.qping.upgrade.common.message.codec.ObjDecoder;
+import me.qping.upgrade.common.message.codec.ObjEncoder;
+import me.qping.upgrade.common.message.handler.AckInboundMiddleware;
 import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,6 +36,8 @@ import static me.qping.upgrade.common.constant.ServerConstant.*;
 public class UpgradeClient implements Client {
 
     AtomicBoolean stopped = new AtomicBoolean(false);
+    AtomicBoolean online = new AtomicBoolean(false);
+
     private int retries = 0;
     EventLoopGroup group = new NioEventLoopGroup();
     Bootstrap bootstrap = new Bootstrap();
@@ -48,6 +53,33 @@ public class UpgradeClient implements Client {
     @Override
     public long getMessageId() {
         return idGen.nextId();
+    }
+
+    @Override
+    public boolean isOnline() {
+        return online.get();
+    }
+
+    @Override
+    public void setOnline(boolean flag) {
+        online.set(flag);
+    }
+
+    @Override
+    public void sendMsg(Msg msg) {
+        if(stopped.get()){
+            throw new RuntimeException("客户端已停止工作");
+        }
+
+        if(!online.get()){
+            throw new RuntimeException("客户端不在线");
+        }
+
+        if(channel == null || !channel.isActive()){
+            throw new RuntimeException("客户端通道中断");
+        }
+
+        channel.writeAndFlush(msg);
     }
 
     public static void initClient() throws Exception {
@@ -94,9 +126,10 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast(new IdleStateHandler(0,0, IdleThenPing));
                         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(MaxFrameLength, 0, LengthFieldLength, 0, LengthFieldLength));
                         ch.pipeline().addLast(new LengthFieldPrepender(LengthFieldLength));
-                        ch.pipeline().addLast("decoder", new MsgPackDecode());
-                        ch.pipeline().addLast("encoder", new MsgPackEncode());
-                        ch.pipeline().addLast(new NettyClientHandler(clientId + "", UpgradeClient.this));
+                        ch.pipeline().addLast("decoder", new ObjDecoder(Msg.class));
+                        ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
+                        ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + clientId , UpgradeClient.this));
+                        ch.pipeline().addLast(new AckInboundMiddleware("客户端：" + clientId));
                     }
 
                 });
@@ -166,6 +199,22 @@ public class UpgradeClient implements Client {
             e.printStackTrace();
             System.out.println("连接失败：" + e.getMessage());
         }
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    Thread.sleep(5000);
+                    Msg msg = Msg.request(UpgradeClient.this.getMessageId(), 1);
+                    System.out.println("发送一个消息");
+                    UpgradeClient.this.sendMsg(msg);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
 
     }
 
