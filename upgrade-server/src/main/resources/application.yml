@@ -1,0 +1,14 @@
+server:
+  port: 8888
+spring:
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: false
