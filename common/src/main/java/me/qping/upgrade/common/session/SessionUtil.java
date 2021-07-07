@@ -3,7 +3,6 @@ package me.qping.upgrade.common.session;
 import io.netty.channel.Channel;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,6 +26,8 @@ public class SessionUtil {
         session.setCreateDate(new Date());
         channel.attr(Attributes.SESSION).set(session);
         clientChannelMap.put(session.getClientId(), channel);
+
+        System.err.println("客户端上线：" + session.getClientId() + "，时间：" + new Date());
 
     }
 

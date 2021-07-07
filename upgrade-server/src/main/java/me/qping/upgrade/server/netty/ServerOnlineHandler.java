@@ -58,17 +58,14 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
             // 重复上线
             Session old = SessionUtil.getSession(clientId);
             if(old != null){
-                throw new ServerRegException(Response.ERR_REG_REPEAT,"客户端上线失败，重复上线，上线时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(old.getCreateDate()));
+                throw new ServerRegException(Response.ERR_REG_REPEAT, "客户端上线失败，重复上线，上线时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(old.getCreateDate()));
             }
 
             // 将客户端基本信息保存到 channel 的 attr 中
             Session session = new Session();
             session.setClientId(clientId);
             session.setAddress(channel.remoteAddress().toString());
-
             SessionUtil.bindSession(session, channel);
-
-            System.err.println("客户端上线: " + msg.getClientId());
 
             // 通知客户端操作成功
             ResponseBase response = new ResponseBase();
