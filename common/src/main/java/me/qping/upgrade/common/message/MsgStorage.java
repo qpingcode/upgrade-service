@@ -6,6 +6,9 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static me.qping.upgrade.common.constant.ServerConstant.MSG_STORAGE_CLEAN_SLEEP_INTERVAL;
+import static me.qping.upgrade.common.constant.ServerConstant.MSG_STORAGE_MSG_TIMEOUT;
+
 /**
  * @ClassName ResponseFuture
  * @Description 管理请求和响应的关系
@@ -18,8 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MsgStorage {
 
     public static final  Map<Long, MsgStorage> msgStorageMap = new ConcurrentHashMap<Long, MsgStorage>();
-    public static final int TIMEOUT = 300 * 1000;
-    public static final int SLEEP_INTERVAL = 30 * 000;
 
     long start;
     Msg msg;
@@ -56,14 +57,14 @@ public class MsgStorage {
         public void run() {
             while (true) {
                 try {
-                    Thread.sleep(SLEEP_INTERVAL);
+                    Thread.sleep(MSG_STORAGE_CLEAN_SLEEP_INTERVAL);
                 } catch (InterruptedException e) {}
 
                 if(!msgStorageMap.isEmpty()){
                     int clearCount = 0;
                     for (long futureId : msgStorageMap.keySet()) {
                         MsgStorage f = msgStorageMap.get(futureId);
-                        if (f == null || (System.currentTimeMillis() - f.getStart()) > TIMEOUT) {
+                        if (f == null || (System.currentTimeMillis() - f.getStart()) > MSG_STORAGE_MSG_TIMEOUT) {
                             msgStorageMap.remove(futureId);
                             clearCount++;
                         }
@@ -83,6 +84,5 @@ public class MsgStorage {
         timeOutThread.setDaemon(true);
         timeOutThread.start();
     }
-
 
 }

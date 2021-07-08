@@ -13,8 +13,6 @@ public class ServerConstant {
 
     public static final int SERVER_WORK_ID = 0;             // server 的 workId， 用于生成消息id
 
-    public static final int RequestTimeout = 30*1000;       // 请求超时时间
-
     public static final String Host = "127.0.0.1";
     public static final int Port = 52000;
 
@@ -23,6 +21,10 @@ public class ServerConstant {
 
     public static final int IdleThenClose = 60;             // 服务器端判断客户端60s没有数据传过来就关闭channel
     public static final int IdleThenPing = 5;               // 客户端判断 5s 没有交互，就发一个心跳
+
+
+    public static final int MSG_STORAGE_MSG_TIMEOUT = 300 * 1000;
+    public static final int MSG_STORAGE_CLEAN_SLEEP_INTERVAL = 30 * 000;
 
 
 }
