@@ -1,5 +1,6 @@
 package me.qping.upgrade.client;
 
+import cn.hutool.core.io.resource.ClassPathResource;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -22,6 +23,8 @@ import me.qping.upgrade.common.message.retry.RetryPolicy;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -39,13 +42,17 @@ public class UpgradeClient implements Client {
     AtomicBoolean stopped = new AtomicBoolean(false);
     AtomicBoolean online = new AtomicBoolean(false);
 
-    private int retries = 0;
     EventLoopGroup group = new NioEventLoopGroup();
     Bootstrap bootstrap = new Bootstrap();
-    private Channel channel;
+    Channel channel;
+
     RetryPolicy retryPolicy = new ExponentialBackOffRetry(2000, Integer.MAX_VALUE);
-    static long clientId;
-    static SnowFlakeId idGen;
+    SnowFlakeId idGen;
+
+    int retries = 0;
+    long clientId;
+    String installDir;
+
 
     public long getClientId(){
         return clientId;
@@ -83,32 +90,47 @@ public class UpgradeClient implements Client {
         channel.writeAndFlush(msg);
     }
 
-    public static void initClient() throws Exception {
-        java.net.URL url = UpgradeClient.class.getProtectionDomain().getCodeSource().getLocation();
-        String path = null;
+    public static Properties readConfig(){
+//        java.net.URL url = UpgradeClient.class.getProtectionDomain().getCodeSource().getLocation();
+//        String path = null;
+//        try {
+//            path = java.net.URLDecoder.decode(url.getPath(), "utf-8");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        int lastIndex = path.lastIndexOf("/") + 1;
+//        path = path.substring(0, lastIndex);
+
+        ClassPathResource resource = new ClassPathResource("config");
+        Properties properties = new Properties();
         try {
-            path = java.net.URLDecoder.decode(url.getPath(), "utf-8");
-        } catch (Exception e) {
+            properties.load(resource.getStream());
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
-        int lastIndex = path.lastIndexOf("/") + 1;
-        path = path.substring(0, lastIndex);
-
-        File file = new File(path + "clientId");
-        System.out.println("ID文件: " + file.getAbsolutePath());
-
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        String id = br.readLine();
-        System.out.println("ID: " + id);
-
-        long clientIdNum = Long.parseLong(id);
-        clientId = clientIdNum;
-        idGen = new SnowFlakeId(clientIdNum,  1);
-
-        if(clientId < 1){
-            throw new RuntimeException("客户端ID不能小于1");
+        System.out.println("==========================");
+        System.out.println("读取配置文件config");
+        for (Object key : properties.keySet()) {
+            System.out.println(key + " : " + properties.get(key));
         }
+        System.out.println("==========================");
+        return properties;
+    }
+
+    public void initClient() {
+
+        Properties properties = readConfig();
+
+        clientId = Long.parseLong(properties.getProperty("clientId"));
+        installDir = properties.getProperty("installDir");
+
+        if(clientId < 1 || clientId > SnowFlakeId.maxWorkerId ){
+            throw new RuntimeException("客户端ID必须大于0且小于" + (SnowFlakeId.maxWorkerId + 1));
+        }
+
+        idGen = new SnowFlakeId(clientId,  1);
 
     }
 

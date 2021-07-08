@@ -1,0 +1,5 @@
+# 客户端id，纯数字大于0小于1024, 每个前置机必须分配不同的， 不能重复
+clientId = 1
+
+# 采集程序安装路径
+installDir = /root/deploy
