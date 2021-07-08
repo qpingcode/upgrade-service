@@ -9,14 +9,13 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
 import me.qping.upgrade.client.handler.ClientOnlineHandler;
-import me.qping.upgrade.client.handler.ShellCommandHandler;
 import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.message.Client;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
-import me.qping.upgrade.common.message.handler.AckInboundMiddleware;
+import me.qping.upgrade.common.message.handler.ShellCommandHandler;
 import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
 
@@ -137,7 +136,7 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast("decoder", new ObjDecoder(Msg.class));
                         ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
                         ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + clientId , UpgradeClient.this));
-                        ch.pipeline().addLast(new ShellCommandHandler("客户端：" + clientId, UpgradeClient.this));
+                        ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this, true));
                     }
 
                 });

@@ -1,4 +1,4 @@
-package me.qping.upgrade.client.handler;
+package me.qping.upgrade.common.message.handler;
 
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.RuntimeUtil;
@@ -7,10 +7,12 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import me.qping.upgrade.common.constant.MsgType;
 import me.qping.upgrade.common.message.Client;
 import me.qping.upgrade.common.message.Msg;
+import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.impl.Response;
 import me.qping.upgrade.common.message.impl.ResponseBase;
 
 import static me.qping.upgrade.common.constant.MsgType.SHELL_COMMAND;
+import static me.qping.upgrade.common.constant.MsgType.SHELL_COMMAND_RESPONSE;
 
 /**
  * @ClassName NettyClient
@@ -21,16 +23,23 @@ import static me.qping.upgrade.common.constant.MsgType.SHELL_COMMAND;
  **/
 public class ShellCommandHandler extends ChannelInboundHandlerAdapter {
 
+    boolean executable = false;
+
     Client client;
 
-    public ShellCommandHandler(String name, Client client) {
+    public ShellCommandHandler(Client client, boolean executable) {
         this.client = client;
+        this.executable = executable;
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object message) throws Exception {
         Msg msg = (Msg) message;
         if(msg.getType() == SHELL_COMMAND){
+
+            if(!executable){
+                return;
+            }
 
             new Thread(new Runnable() {
                 @Override
@@ -53,6 +62,9 @@ public class ShellCommandHandler extends ChannelInboundHandlerAdapter {
                 }
             }).start();
 
+        } else if (msg.getType() == SHELL_COMMAND_RESPONSE){
+            MsgStorage.recive(msg);
+            System.out.println("执行结果: " + msg.toString());
         }else{
             super.channelRead(ctx, message);
         }

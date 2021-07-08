@@ -12,9 +12,8 @@ import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
-import me.qping.upgrade.common.message.handler.AckInboundMiddleware;
+import me.qping.upgrade.common.message.handler.ShellCommandHandler;
 import me.qping.upgrade.server.netty.handler.ServerOnlineHandler;
-import me.qping.upgrade.server.netty.handler.ShellCommandHandler;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -49,7 +48,7 @@ public class UpgradeServer {
                             ch.pipeline().addLast("decoder", new ObjDecoder(Msg.class));
                             ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
                             ch.pipeline().addLast(new ServerOnlineHandler("中心端"));
-                            ch.pipeline().addLast(new ShellCommandHandler());
+                            ch.pipeline().addLast(new ShellCommandHandler(null, false));
                         }
                     });
 

@@ -2,9 +2,8 @@ package me.qping.upgrade.common.message.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.timeout.IdleStateEvent;
 import me.qping.upgrade.common.message.Msg;
-import me.qping.upgrade.common.message.MsgFuture;
+import me.qping.upgrade.common.message.MsgStorage;
 
 import static me.qping.upgrade.common.constant.MsgType.*;
 
@@ -40,7 +39,7 @@ public class AckInboundMiddleware extends ChannelInboundHandlerAdapter {
 
     }
     protected void handlerResponse(ChannelHandlerContext ctx, Msg msg) {
-        MsgFuture.recive(msg);
+        MsgStorage.recive(msg);
     }
 
 
