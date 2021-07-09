@@ -2,11 +2,14 @@ package me.qping.upgrade.client.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import me.qping.upgrade.common.message.Client;
+import me.qping.upgrade.common.message.handler.FileTransferUtil;
 import me.qping.upgrade.common.message.handler.OnlineInboundMiddleware;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.impl.RegisterForm;
 import me.qping.upgrade.common.message.impl.Response;
 import me.qping.upgrade.common.message.impl.ResponseBase;
+
+import java.io.File;
 
 /**
  * @ClassName NettyClient
@@ -60,7 +63,15 @@ public class ClientOnlineHandler extends OnlineInboundMiddleware {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
         client.setOnline(false);
-        client.connect();
+
+        // 延迟一秒重连，可能会出现：异常下线，客户端立马重连，服务器还没来得及删session，报错重复登陆的问题
+        try{
+            Thread.sleep(1000);
+        } catch (Exception ex){
+
+        } finally {
+            client.connect();
+        }
     }
 
 }

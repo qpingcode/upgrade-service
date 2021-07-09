@@ -12,6 +12,7 @@ import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
+import me.qping.upgrade.common.message.handler.FileTransferHandler;
 import me.qping.upgrade.common.message.handler.ShellCommandHandler;
 import me.qping.upgrade.server.netty.handler.ServerOnlineHandler;
 import org.springframework.stereotype.Component;
@@ -49,6 +50,7 @@ public class UpgradeServer {
                             ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
                             ch.pipeline().addLast(new ServerOnlineHandler("中心端"));
                             ch.pipeline().addLast(new ShellCommandHandler(null, false));
+                            ch.pipeline().addLast(new FileTransferHandler("/Users/qping/Desktop/data/server"));
                         }
                     });
 

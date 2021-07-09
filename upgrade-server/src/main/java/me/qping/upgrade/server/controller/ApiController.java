@@ -62,4 +62,24 @@ public class ApiController {
         }
     }
 
+    @RequestMapping(value = "/client/transferTo")
+    @ResponseBody
+    public void transferTo(long clientId, String serverFilePath){
+        try {
+            SessionUtil.transferTo(clientId, serverFilePath);
+        } catch (ServerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @RequestMapping(value = "/client/transferFrom")
+    @ResponseBody
+    public void transferFrom(long clientId, String clientFilePath){
+        try {
+            SessionUtil.transferFrom(clientId, clientFilePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

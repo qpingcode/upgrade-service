@@ -34,6 +34,7 @@ public class ShellCommandHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object message) throws Exception {
+
         Msg msg = (Msg) message;
         if(msg.getType() == SHELL_COMMAND){
 

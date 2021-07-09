@@ -25,13 +25,17 @@ public interface Response {
     int ERR_REG_REPEAT = 2;
 
     // clientId 非法
-    int ERR_REG_CLIENT_ID_ILLEGAL = 3;
+    int ERR_CLIENT_ID_ILLEGAL = 3;
 
 
     // client 下线
-    int ERR_COMMAND_CLIENT_OFFLINE = 4;
+    int ERR_CLIENT_OFFLINE = 4;
 
-    int ERR_COMMAND_ERROR = 4;
+
+    int ERR_COMMAND_ERROR = 5;
+
+
+    int ERR_FILE_NOT_EXISTS = 6;
 
 
     long getCode();

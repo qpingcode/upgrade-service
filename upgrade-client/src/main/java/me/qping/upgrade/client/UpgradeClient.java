@@ -16,6 +16,8 @@ import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
+import me.qping.upgrade.common.message.handler.FileTransferHandler;
+import me.qping.upgrade.common.message.handler.FileTransferUtil;
 import me.qping.upgrade.common.message.handler.ShellCommandHandler;
 import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
@@ -112,8 +114,8 @@ public class UpgradeClient implements Client {
 
         System.out.println("==========================");
         System.out.println("读取配置文件config");
-        for (Object key : properties.keySet()) {
-            System.out.println(key + " : " + properties.get(key));
+        for (String key : properties.stringPropertyNames()) {
+            System.out.println(key + " : " + (key.indexOf("password") > -1  ? "*" : properties.getProperty(key)));
         }
         System.out.println("==========================");
         return properties;
@@ -159,6 +161,7 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
                         ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + clientId , UpgradeClient.this));
                         ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this, true));
+                        ch.pipeline().addLast(new FileTransferHandler("/Users/qping/Desktop/data/client"));
                     }
 
                 });
@@ -192,6 +195,7 @@ public class UpgradeClient implements Client {
 
         try {
             synchronized (bootstrap) {
+
                 final ChannelFuture cf = bootstrap.connect(ServerConstant.Host, ServerConstant.Port);
                 cf.addListener(new ChannelFutureListener() {
                     @Override

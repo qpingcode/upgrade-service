@@ -2,4 +2,9 @@
 clientId = 1
 
 # 采集程序安装路径
-installDir = /root/deploy
+installDir = /Users/qping/test
+
+# 数据库配置
+jdbc_url = jdbc:h2:file:/Users/qping/test/.h2/upgradedb;AUTO_SERVER=TRUE
+jdbc_username = sa
+jdbc_password = sa

@@ -3,6 +3,7 @@ package me.qping.upgrade.common.message.codec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import me.qping.upgrade.common.message.Msg;
 
 /**
  * 编码器
@@ -19,11 +20,10 @@ public class ObjEncoder extends MessageToByteEncoder<Object> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Object in, ByteBuf out)  {
-        if (genericClass.isInstance(in)) {
-            byte[] data = Serialization.serialize(in);
-            out.writeInt(data.length);
-            out.writeBytes(data);
-        }
+        byte[] data = Serialization.serialize(in);
+//        Msg msg = (Msg)in;
+//        out.writeByte(msg.getType());
+        out.writeBytes(data);
     }
 
 }

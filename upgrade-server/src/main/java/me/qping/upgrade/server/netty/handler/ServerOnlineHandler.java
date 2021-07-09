@@ -30,7 +30,6 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
         SessionUtil.unBindSession(channel);
-
     }
 
 
@@ -52,7 +51,7 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
             long clientId = msg.getClientId();
 
             if(clientId <= 0){
-                throw new ServerException(Response.ERR_REG_CLIENT_ID_ILLEGAL, "客户端上线失败，id非法：" + clientId);
+                throw new ServerException(Response.ERR_CLIENT_ID_ILLEGAL, "客户端上线失败，id非法：" + clientId);
             }
 
             // 重复上线

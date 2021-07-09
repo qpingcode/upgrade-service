@@ -1,17 +1,24 @@
 package me.qping.upgrade.common.session;
 
+import com.alibaba.fastjson.JSON;
 import io.netty.channel.Channel;
 import me.qping.upgrade.common.constant.MsgType;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.SnowFlakeId;
+import me.qping.upgrade.common.message.handler.FileTransferUtil;
+import me.qping.upgrade.common.message.impl.FileBurstInstruct;
+import me.qping.upgrade.common.message.impl.FileDescInfo;
+import me.qping.upgrade.common.message.impl.FileStatus;
 
+import java.io.File;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static me.qping.upgrade.common.constant.ServerConstant.SERVER_WORK_ID;
-import static me.qping.upgrade.common.message.impl.Response.ERR_COMMAND_CLIENT_OFFLINE;
+import static me.qping.upgrade.common.message.impl.Response.ERR_CLIENT_OFFLINE;
+import static me.qping.upgrade.common.message.impl.Response.ERR_FILE_NOT_EXISTS;
 
 /**
  * @ClassName SessionUtil
@@ -83,15 +90,6 @@ public class SessionUtil {
 
 
     /**
-     * 传输文件到客户端
-     * @param session
-     * @param file
-     */
-    public static void transferFile(Session session, String file){
-
-    }
-
-    /**
      * 在客户端执行Shell脚本
      * @param clientId
      * @param command
@@ -105,11 +103,56 @@ public class SessionUtil {
 
         Channel channel = getChannel(clientId);
         if(channel == null){
-            throw new ServerException(ERR_COMMAND_CLIENT_OFFLINE, "客户端已下线" + clientId);
+            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + clientId);
         }
 
         channel.writeAndFlush(msg);
     }
 
+    /**
+     * 下发文件到客户端
+     * @param clientId          客户端id
+     * @param serverFilePath    服务器文件路径
+     */
+    public static void transferTo(long clientId, String serverFilePath) throws ServerException {
+        File file = new File(serverFilePath);
 
+        if(!file.exists()){
+            throw new ServerException(ERR_FILE_NOT_EXISTS, "文件不存在：" + serverFilePath);
+        }
+
+
+        Msg fileTransferProtocol = FileTransferUtil.buildRequestTransferFile(messageIdGen.nextId(), file.getAbsolutePath(),
+                file.getName(), "", file.length());
+
+        Channel channel = getChannel(clientId);
+        if(channel == null){
+            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + clientId);
+        }
+
+        System.out.println("开发下发文件：" + serverFilePath + "，到客户端：" + clientId );
+
+        channel.writeAndFlush(fileTransferProtocol);
+    }
+
+
+    /**
+     * 从客户端上传文件到服务器
+     * @param clientId          客户端id
+     * @param clientFilePath    客户端文件路径
+     */
+    public static void transferFrom(long clientId, String clientFilePath) throws ServerException {
+
+        // todo 断点续传信息，实际应用中需要将断点续传信息保存到数据库中
+        Msg sendFileTransferProtocol = FileTransferUtil.buildTransferInstruct(messageIdGen.nextId(), FileStatus.BEGIN, clientFilePath, 0l);
+
+        Channel channel = getChannel(clientId);
+        if(channel == null){
+            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + clientId);
+        }
+
+        System.out.println("开始接收文件：" + clientFilePath);
+        channel.writeAndFlush(clientFilePath);
+
+    }
 }
