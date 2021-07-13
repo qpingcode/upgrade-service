@@ -24,7 +24,7 @@ public class ServerConstant {
     public static final int IdleThenPing = 5;               // 客户端判断 5s 没有交互，就发一个心跳
 
 
-    public static final int MSG_STORAGE_MSG_TIMEOUT = 300 * 1000;
+    public static final int MSG_STORAGE_MSG_TIMEOUT = 60 * 1000;
     public static final int MSG_STORAGE_CLEAN_SLEEP_INTERVAL = 30 * 1000;
 
 

@@ -1,10 +1,12 @@
 package me.qping.upgrade.common.message;
 
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.TimedCache;
 import lombok.Data;
 
 import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static me.qping.upgrade.common.constant.ServerConstant.MSG_STORAGE_CLEAN_SLEEP_INTERVAL;
 import static me.qping.upgrade.common.constant.ServerConstant.MSG_STORAGE_MSG_TIMEOUT;
@@ -18,9 +20,14 @@ import static me.qping.upgrade.common.constant.ServerConstant.MSG_STORAGE_MSG_TI
  * @Version 1.0
  **/
 @Data
-public class MsgStorage {
+public class MsgStorage{
 
-    public static final  Map<Long, MsgStorage> msgStorageMap = new ConcurrentHashMap<Long, MsgStorage>();
+
+    static TimedCache<Long, LinkedBlockingQueue<Msg>> timedCache = CacheUtil.newTimedCache(MSG_STORAGE_MSG_TIMEOUT);
+    static{
+        timedCache.schedulePrune(MSG_STORAGE_CLEAN_SLEEP_INTERVAL);
+    }
+
 
     long start;
     Msg msg;
@@ -30,15 +37,36 @@ public class MsgStorage {
         this.start = new Date().getTime();
     }
 
+    public static void init(long messageId) {
+        timedCache.put(messageId, new LinkedBlockingQueue<Msg>(1));
+    }
+
     /**
      * 根据请求id获取响应结果
      * @param messageId
      * @return
      */
-    public static Msg get(long messageId) {
-        MsgStorage msg = msgStorageMap.get(messageId);
-        msgStorageMap.remove(messageId);
-        return msg.getMsg();
+    public static <T extends Msg> T get(long messageId, long timeoutMillis) {
+
+        try {
+
+            if(timeoutMillis > MSG_STORAGE_MSG_TIMEOUT){
+                timeoutMillis = MSG_STORAGE_MSG_TIMEOUT;
+            }
+
+            if(timedCache.get(messageId) == null){
+                return null;
+            }
+
+            Msg msg = timedCache.get(messageId).poll(timeoutMillis, TimeUnit.MILLISECONDS);
+            timedCache.remove(messageId);
+
+            if(msg != null){
+                return (T) msg;
+            }
+        } catch (InterruptedException e) {}
+
+        return null;
     }
 
     /**
@@ -46,43 +74,12 @@ public class MsgStorage {
      * @param responseMsg
      */
     public static void recive(Msg responseMsg) {
-        msgStorageMap.put(responseMsg.getMessageId(), new MsgStorage(responseMsg));
-    }
 
-    /**
-     * 处理请求超时的线程
-     */
-    static class FutureTimeOutThread extends Thread {
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    Thread.sleep(MSG_STORAGE_CLEAN_SLEEP_INTERVAL);
-                } catch (InterruptedException e) {}
-
-                if(!msgStorageMap.isEmpty()){
-                    int clearCount = 0;
-                    for (long futureId : msgStorageMap.keySet()) {
-                        MsgStorage f = msgStorageMap.get(futureId);
-                        if (f == null || (System.currentTimeMillis() - f.getStart()) > MSG_STORAGE_MSG_TIMEOUT) {
-                            msgStorageMap.remove(futureId);
-                            clearCount++;
-                        }
-                    }
-                    System.out.println("清理消息: " + clearCount + " 条");
-                }
-
-            }
+        if(responseMsg == null || timedCache.get(responseMsg.getMessageId()) == null){
+            return;
         }
+        timedCache.get(responseMsg.getMessageId()).add(responseMsg);
     }
 
-    /**
-     * 设置为后台线程
-     */
-    static {
-        FutureTimeOutThread timeOutThread = new FutureTimeOutThread();
-        timeOutThread.setDaemon(true);
-        timeOutThread.start();
-    }
 
 }

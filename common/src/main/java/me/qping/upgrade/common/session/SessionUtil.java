@@ -1,11 +1,12 @@
 package me.qping.upgrade.common.session;
 
 import io.netty.channel.Channel;
+import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.Msg;
+import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.handler.FileTransferUtil;
-import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.impl.FileDescInfo;
 import me.qping.upgrade.common.message.impl.ShellCommand;
 
@@ -14,9 +15,9 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
 import static me.qping.upgrade.common.constant.ResponseCode.ERR_CLIENT_OFFLINE;
 import static me.qping.upgrade.common.constant.ResponseCode.ERR_FILE_NOT_EXISTS;
+import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
 
 /**
  * @ClassName SessionUtil
@@ -94,10 +95,12 @@ public class SessionUtil {
      * @param nodeId
      * @param command
      */
-    public static void executeShell(long nodeId, String command) throws ServerException {
+    public static long executeShell(long nodeId, String command) throws ServerException {
+
+        long messageId = messageIdGen.nextId();
 
         ShellCommand msg = new ShellCommand(command);
-        msg.setMessageId(messageIdGen.nextId());
+        msg.setMessageId(messageId);
 
         Channel channel = getChannel(nodeId);
         if(channel == null){
@@ -105,6 +108,8 @@ public class SessionUtil {
         }
 
         channel.writeAndFlush(msg);
+        MsgStorage.init(messageId);
+        return messageId;
     }
 
     /**

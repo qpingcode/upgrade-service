@@ -2,6 +2,8 @@ package me.qping.upgrade.server.controller;
 
 import io.netty.channel.Channel;
 import me.qping.upgrade.common.exception.ServerException;
+import me.qping.upgrade.common.message.MsgStorage;
+import me.qping.upgrade.common.message.impl.ShellCommandResponse;
 import me.qping.upgrade.common.session.Session;
 import me.qping.upgrade.common.session.SessionUtil;
 import me.qping.upgrade.server.netty.UpgradeServer;
@@ -54,11 +56,17 @@ public class ApiController {
 
     @RequestMapping(value = "/client/executeShell")
     @ResponseBody
-    public void executeShell(long clientId, String shell){
+    public ShellCommandResponse executeShell(long clientId, String shell){
         try {
-            SessionUtil.executeShell(clientId, shell);
+
+            long messageId = SessionUtil.executeShell(clientId, shell);
+
+            ShellCommandResponse result = MsgStorage.get(messageId, 10 * 1000);
+            return result;
+
         } catch (ServerException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
