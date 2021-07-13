@@ -2,6 +2,7 @@ package me.qping.upgrade.common.message.impl;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import me.qping.upgrade.common.message.Msg;
 
 /**
  * 文件分片指令
@@ -10,10 +11,17 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-public class FileBurstInstruct {
-    private Integer status;       //Constants.FileStatus ｛0开始、1中间、2结尾、3完成｝
-    private String clientFileUrl; //客户端文件URL
-    private Long readPosition; //读取位置
+public class FileBurstInstruct extends Msg {
+
+    private long clientId;
+
+    private int status;       // FileStatus ｛0开始、1中间、2结尾、3完成｝
+
+    private String clientFileUrl; // 文件URL
+
+    private long totalSize;       // 文件总大小
+
+    private long readPosition;    // 读取位置
 
     public FileBurstInstruct(int status) {
         this.status = status;

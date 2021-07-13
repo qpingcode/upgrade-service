@@ -31,7 +31,7 @@ public class ApiController {
     public List<Session> clientList(){
         List<Session> list = new ArrayList<>();
 
-        for(Long clientId : SessionUtil.getClientChannelMap().keySet()){
+        for(Long clientId : SessionUtil.getNodeChannelMap().keySet()){
             Session session = SessionUtil.getSession(clientId);
             list.add(session);
         }
@@ -41,7 +41,7 @@ public class ApiController {
     @RequestMapping(value = "/client/kick")
     @ResponseBody
     public boolean kickClient(long clientId){
-        Channel channel = SessionUtil.getClientChannelMap().get(clientId);
+        Channel channel = SessionUtil.getNodeChannelMap().get(clientId);
 
         if(channel == null){
             return false;

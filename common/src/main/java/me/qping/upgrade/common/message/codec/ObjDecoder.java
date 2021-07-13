@@ -4,7 +4,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
+import java.nio.charset.Charset;
 import java.util.List;
+
+import static me.qping.upgrade.common.constant.ServerConstant.MSG_PROTOCAL_ID;
 
 /**
  * 解码器
@@ -13,15 +16,16 @@ import java.util.List;
  */
 public class ObjDecoder extends ByteToMessageDecoder {
 
-    private Class<?> genericClass;
-
-    public ObjDecoder(Class<?> genericClass) {
-        this.genericClass = genericClass;
-    }
-
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-//        byte msgType = in.readByte();
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+
+        CharSequence msgProtocolID = in.readCharSequence(2, Charset.forName("utf8"));
+        if(!msgProtocolID.equals(MSG_PROTOCAL_ID)){
+            throw new Exception("消息非法");
+        }
+
+        byte msgType = in.readByte();
+        Class<?> genericClass = Serialization.getClass(msgType);
         byte[] data = new byte[in.readableBytes()];
         in.readBytes(data);
         out.add(Serialization.deserialize(data, genericClass));

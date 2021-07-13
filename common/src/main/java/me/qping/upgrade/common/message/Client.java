@@ -6,7 +6,7 @@ public interface Client {
     void disconnect();
     void connect();
     RetryPolicy getRetryPolicy();
-    long getClientId();
+    long getNodeId();
     long getMessageId();
 
     boolean isOnline();

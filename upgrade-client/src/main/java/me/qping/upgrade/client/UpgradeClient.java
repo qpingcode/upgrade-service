@@ -16,15 +16,14 @@ import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
-import me.qping.upgrade.common.message.handler.FileTransferHandler;
-import me.qping.upgrade.common.message.handler.FileTransferUtil;
+import me.qping.upgrade.common.message.codec.Serialization;
+import me.qping.upgrade.common.message.handler.FileBurstDataHandler;
+import me.qping.upgrade.common.message.handler.FileBurstInstructHandler;
+import me.qping.upgrade.common.message.handler.FileDescInfoHandler;
 import me.qping.upgrade.common.message.handler.ShellCommandHandler;
 import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -52,12 +51,12 @@ public class UpgradeClient implements Client {
     SnowFlakeId idGen;
 
     int retries = 0;
-    long clientId;
+    long nodeId;
     String installDir;
 
 
-    public long getClientId(){
-        return clientId;
+    public long getNodeId(){
+        return nodeId;
     }
 
     @Override
@@ -93,17 +92,6 @@ public class UpgradeClient implements Client {
     }
 
     public static Properties readConfig(){
-//        java.net.URL url = UpgradeClient.class.getProtectionDomain().getCodeSource().getLocation();
-//        String path = null;
-//        try {
-//            path = java.net.URLDecoder.decode(url.getPath(), "utf-8");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        int lastIndex = path.lastIndexOf("/") + 1;
-//        path = path.substring(0, lastIndex);
-
         ClassPathResource resource = new ClassPathResource("config");
         Properties properties = new Properties();
         try {
@@ -125,14 +113,16 @@ public class UpgradeClient implements Client {
 
         Properties properties = readConfig();
 
-        clientId = Long.parseLong(properties.getProperty("clientId"));
+        nodeId = Long.parseLong(properties.getProperty("nodeId"));
         installDir = properties.getProperty("installDir");
 
-        if(clientId < 1 || clientId > SnowFlakeId.maxWorkerId ){
+        if(nodeId < 1 || nodeId > SnowFlakeId.maxWorkerId ){
             throw new RuntimeException("客户端ID必须大于0且小于" + (SnowFlakeId.maxWorkerId + 1));
         }
 
-        idGen = new SnowFlakeId(clientId,  1);
+        idGen = new SnowFlakeId(nodeId,  1);
+
+        Serialization.init();
 
     }
 
@@ -157,11 +147,13 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast(new IdleStateHandler(0,0, IdleThenPing));
                         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(MaxFrameLength, 0, LengthFieldLength, 0, LengthFieldLength));
                         ch.pipeline().addLast(new LengthFieldPrepender(LengthFieldLength));
-                        ch.pipeline().addLast("decoder", new ObjDecoder(Msg.class));
-                        ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
-                        ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + clientId , UpgradeClient.this));
-                        ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this, true));
-                        ch.pipeline().addLast(new FileTransferHandler("/Users/qping/Desktop/data/client"));
+                        ch.pipeline().addLast(new ObjDecoder());
+                        ch.pipeline().addLast(new ObjEncoder());
+                        ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + nodeId , UpgradeClient.this));
+                        ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this));
+                        ch.pipeline().addLast(new FileDescInfoHandler(installDir));
+                        ch.pipeline().addLast(new FileBurstInstructHandler());
+                        ch.pipeline().addLast(new FileBurstDataHandler(installDir));
                     }
 
                 });

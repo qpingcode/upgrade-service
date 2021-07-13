@@ -13,7 +13,7 @@ import java.util.Date;
  **/
 @Data
 public class Session {
-    long clientId;
+    long nodeId;
     String address;
     Date createDate;
 }

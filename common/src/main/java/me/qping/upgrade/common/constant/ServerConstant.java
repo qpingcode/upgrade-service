@@ -11,7 +11,8 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  **/
 public class ServerConstant {
 
-    public static final int SERVER_WORK_ID = 0;             // server 的 workId， 用于生成消息id
+    public static final String MSG_PROTOCAL_ID = "Rx";      // 协议定义消息开头
+    public static final int SERVER_NODE_ID = 0;             // server 的 workId， 用于生成消息id
 
     public static final String Host = "127.0.0.1";
     public static final int Port = 52000;
@@ -24,7 +25,8 @@ public class ServerConstant {
 
 
     public static final int MSG_STORAGE_MSG_TIMEOUT = 300 * 1000;
-    public static final int MSG_STORAGE_CLEAN_SLEEP_INTERVAL = 30 * 000;
+    public static final int MSG_STORAGE_CLEAN_SLEEP_INTERVAL = 30 * 1000;
+
 
 
 }

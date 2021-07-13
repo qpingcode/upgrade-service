@@ -1,24 +1,22 @@
 package me.qping.upgrade.common.session;
 
-import com.alibaba.fastjson.JSON;
 import io.netty.channel.Channel;
-import me.qping.upgrade.common.constant.MsgType;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.handler.FileTransferUtil;
-import me.qping.upgrade.common.message.impl.FileBurstInstruct;
+import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.impl.FileDescInfo;
-import me.qping.upgrade.common.message.impl.FileStatus;
+import me.qping.upgrade.common.message.impl.ShellCommand;
 
 import java.io.File;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static me.qping.upgrade.common.constant.ServerConstant.SERVER_WORK_ID;
-import static me.qping.upgrade.common.message.impl.Response.ERR_CLIENT_OFFLINE;
-import static me.qping.upgrade.common.message.impl.Response.ERR_FILE_NOT_EXISTS;
+import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
+import static me.qping.upgrade.common.constant.ResponseCode.ERR_CLIENT_OFFLINE;
+import static me.qping.upgrade.common.constant.ResponseCode.ERR_FILE_NOT_EXISTS;
 
 /**
  * @ClassName SessionUtil
@@ -29,8 +27,8 @@ import static me.qping.upgrade.common.message.impl.Response.ERR_FILE_NOT_EXISTS;
  **/
 public class SessionUtil {
 
-    public static final ConcurrentHashMap<Long, Channel> clientChannelMap = new ConcurrentHashMap<>();
-    public static SnowFlakeId messageIdGen = new SnowFlakeId(SERVER_WORK_ID,  1);
+    public static final ConcurrentHashMap<Long, Channel> nodeChannelMap = new ConcurrentHashMap<>();
+    public static SnowFlakeId messageIdGen = new SnowFlakeId(SERVER_NODE_ID,  1);
 
     public static void main(String[] args) {
         SnowFlakeId messageIdGen = new SnowFlakeId(0,  1);
@@ -41,38 +39,40 @@ public class SessionUtil {
 
 
     public static void bindSession(Session session, Channel channel) {
-        channel.attr(Attributes.SESSION).set(session);
-
         if(session == null){
             return;
         }
         session.setCreateDate(new Date());
         channel.attr(Attributes.SESSION).set(session);
-        clientChannelMap.put(session.getClientId(), channel);
+        nodeChannelMap.put(session.getNodeId(), channel);
 
-        System.err.println("客户端上线：" + session.getClientId() + "，时间：" + new Date());
+        System.err.println("客户端上线：" + session.getNodeId() + "，时间：" + new Date());
 
     }
 
     public static void unBindSession(Channel channel) {
         if (hasLogin(channel)) {
             Session session = getSession(channel);
-            clientChannelMap.remove(session.getClientId());
+            nodeChannelMap.remove(session.getNodeId());
             channel.attr(Attributes.SESSION).set(null);
-            System.err.println("客户端下线：" + session.getClientId() + "，时间：" + new Date());
+            System.err.println("客户端下线：" + session.getNodeId() + "，时间：" + new Date());
         }
     }
 
-    private static boolean hasLogin(Channel channel) {
-        return channel.hasAttr(Attributes.SESSION);
+    public static boolean hasLogin(Channel channel) {
+        return channel != null && channel.hasAttr(Attributes.SESSION);
     }
 
-    private static Session getSession(Channel channel) {
+    public static Session getSession(Channel channel) {
+        if(!hasLogin(channel)){
+            return null;
+        }
+
         return channel.attr(Attributes.SESSION).get();
     }
 
-    public static Session getSession(Long clientId) {
-        Channel channel = clientChannelMap.get(clientId);
+    public static Session getSession(Long nodeId) {
+        Channel channel = nodeChannelMap.get(nodeId);
         if(channel == null){
             return null;
         }
@@ -80,30 +80,28 @@ public class SessionUtil {
         return channel.attr(Attributes.SESSION).get();
     }
 
-    public static Channel getChannel(long clientId){
-        return clientChannelMap.get(clientId);
+    public static Channel getChannel(long nodeId){
+        return nodeChannelMap.get(nodeId);
     }
 
-    public static Map<Long, Channel> getClientChannelMap() {
-        return clientChannelMap;
+    public static Map<Long, Channel> getNodeChannelMap() {
+        return nodeChannelMap;
     }
 
 
     /**
      * 在客户端执行Shell脚本
-     * @param clientId
+     * @param nodeId
      * @param command
      */
-    public static void executeShell(long clientId, String command) throws ServerException {
+    public static void executeShell(long nodeId, String command) throws ServerException {
 
-        Msg msg = new Msg();
+        ShellCommand msg = new ShellCommand(command);
         msg.setMessageId(messageIdGen.nextId());
-        msg.setType(MsgType.SHELL_COMMAND);
-        msg.setBody(command);
 
-        Channel channel = getChannel(clientId);
+        Channel channel = getChannel(nodeId);
         if(channel == null){
-            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + clientId);
+            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + nodeId);
         }
 
         channel.writeAndFlush(msg);
@@ -111,10 +109,10 @@ public class SessionUtil {
 
     /**
      * 下发文件到客户端
-     * @param clientId          客户端id
+     * @param nodeId          客户端id
      * @param serverFilePath    服务器文件路径
      */
-    public static void transferTo(long clientId, String serverFilePath) throws ServerException {
+    public static void transferTo(long nodeId, String serverFilePath) throws ServerException {
         File file = new File(serverFilePath);
 
         if(!file.exists()){
@@ -122,33 +120,34 @@ public class SessionUtil {
         }
 
 
-        Msg fileTransferProtocol = FileTransferUtil.buildRequestTransferFile(messageIdGen.nextId(), file.getAbsolutePath(),
-                file.getName(), "", file.length());
+        FileDescInfo fileDescInfo = FileTransferUtil.buildRequestTransferFile(messageIdGen.nextId(),
+                file.getAbsolutePath(), file.getName(), "", file.length());
 
-        Channel channel = getChannel(clientId);
+        Channel channel = getChannel(nodeId);
         if(channel == null){
-            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + clientId);
+            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + nodeId);
         }
 
-        System.out.println("开发下发文件：" + serverFilePath + "，到客户端：" + clientId );
+        System.out.println("开发下发文件：" + serverFilePath + "，到客户端：" + nodeId );
 
-        channel.writeAndFlush(fileTransferProtocol);
+        channel.writeAndFlush(fileDescInfo);
     }
 
 
     /**
      * 从客户端上传文件到服务器
-     * @param clientId          客户端id
+     * @param nodeId          客户端id
      * @param clientFilePath    客户端文件路径
      */
-    public static void transferFrom(long clientId, String clientFilePath) throws ServerException {
+    public static void transferFrom(long nodeId, String clientFilePath) throws ServerException {
 
         // todo 断点续传信息，实际应用中需要将断点续传信息保存到数据库中
-        Msg sendFileTransferProtocol = FileTransferUtil.buildTransferInstruct(messageIdGen.nextId(), FileStatus.BEGIN, clientFilePath, 0l);
+        // todo 文件大小需传进来
+        Msg sendFileTransferProtocol = FileTransferUtil.buildTransferInstruct(messageIdGen.nextId(), FileStatus.BEGIN, clientFilePath, 0l, -1l);
 
-        Channel channel = getChannel(clientId);
+        Channel channel = getChannel(nodeId);
         if(channel == null){
-            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + clientId);
+            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + nodeId);
         }
 
         System.out.println("开始接收文件：" + clientFilePath);

@@ -3,14 +3,17 @@ package me.qping.upgrade.server.netty.handler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import me.qping.upgrade.common.exception.ServerException;
-import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.handler.OnlineInboundMiddleware;
-import me.qping.upgrade.common.message.impl.Response;
-import me.qping.upgrade.common.message.impl.ResponseBase;
+import me.qping.upgrade.common.message.impl.RegisterForm;
+import me.qping.upgrade.common.message.impl.RegisterResponse;
+import me.qping.upgrade.common.constant.ResponseCode;
 import me.qping.upgrade.common.session.Session;
 import me.qping.upgrade.common.session.SessionUtil;
 
 import java.text.SimpleDateFormat;
+
+import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
+import static me.qping.upgrade.common.constant.ResponseCode.ERR_OTHER;
 
 
 /**
@@ -35,52 +38,52 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
 
     @Override
     protected void handlerReaderIdle(ChannelHandlerContext ctx) {
-        System.err.println(" ---- client "+ ctx.channel().remoteAddress().toString() + " reader timeOut, --- close it");
+        SessionUtil.unBindSession(ctx.channel()); // add by qping 2021-07-13
         ctx.close();
     }
 
+    public void handlerRegister(ChannelHandlerContext ctx, RegisterForm msg) {
 
-    public void handlerRegister(ChannelHandlerContext ctx, Msg msg) {
-
+        RegisterResponse response = new RegisterResponse();
+        response.setMessageId(msg.getMessageId());
 
         try{
 
             Channel channel = ctx.channel();
 
             // 获取客户端信息
-            long clientId = msg.getClientId();
+            long nodeId = msg.getNodeId();
 
-            if(clientId <= 0){
-                throw new ServerException(Response.ERR_CLIENT_ID_ILLEGAL, "客户端上线失败，id非法：" + clientId);
+            if(nodeId <= 0){
+                throw new ServerException(ResponseCode.ERR_CLIENT_ID_ILLEGAL, "客户端上线失败，id非法：" + nodeId);
             }
 
             // 重复上线
-            Session old = SessionUtil.getSession(clientId);
+            Session old = SessionUtil.getSession(nodeId);
             if(old != null){
-                throw new ServerException(Response.ERR_REG_REPEAT, "客户端上线失败，重复上线，上线时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(old.getCreateDate()));
+                throw new ServerException(ResponseCode.ERR_REG_REPEAT, "客户端上线失败，重复上线，上线时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(old.getCreateDate()));
             }
 
             // 将客户端基本信息保存到 channel 的 attr 中
             Session session = new Session();
-            session.setClientId(clientId);
+            session.setNodeId(nodeId);
             session.setAddress(channel.remoteAddress().toString());
             SessionUtil.bindSession(session, channel);
 
             // 通知客户端操作成功
-            ResponseBase response = new ResponseBase();
-            response.setCode(Response.SUCCESS);
-            response.setMessage("上线成功，时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(session.getCreateDate()));
-            ctx.writeAndFlush(Msg.registerResponse(msg.getMessageId(), response));
+            response.setCode(ResponseCode.SUCCESS);
+            response.setMessage("客户端：" + nodeId + " 上线成功，时间: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(session.getCreateDate()));
 
-        }catch (ServerException ex){
-            System.err.println(ex.getMessage());
-
-            ResponseBase response = new ResponseBase();
-            response.setCode(ex.getResponseCode());
-            response.setMessage(ex.getMessage());
-            ctx.writeAndFlush(Msg.registerResponse(msg.getMessageId(), response));
         }catch (Exception ex){
-            ex.printStackTrace();
+            System.err.println(ex.getMessage());
+            if(ex instanceof ServerException){
+                response.setCode(((ServerException)ex).getResponseCode());
+            }else{
+                response.setCode(ERR_OTHER);
+            }
+            response.setMessage(ex.getMessage());
+        }finally {
+            ctx.writeAndFlush(response);
         }
 
     }

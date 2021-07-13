@@ -1,10 +1,10 @@
-# 客户端id，纯数字大于0小于1024, 每个前置机必须分配不同的， 不能重复
-clientId = 1
+# 节点标识，纯数字大于0小于1024, 每个前置机必须分配不同的， 不能重复
+nodeId = 1
 
 # 采集程序安装路径
-installDir = /Users/qping/test
+installDir = /Users/qping/Desktop/data/client
 
 # 数据库配置
 jdbc_url = jdbc:h2:file:/Users/qping/test/.h2/upgradedb;AUTO_SERVER=TRUE
 jdbc_username = sa
-jdbc_password = sa
+jdbc_password = 

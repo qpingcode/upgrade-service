@@ -2,6 +2,7 @@ package me.qping.upgrade.common.message.impl;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import me.qping.upgrade.common.message.Msg;
 
 /**
  * 文件分片数据
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-public class FileBurstData {
+public class FileBurstData extends Msg {
 	private String	fileUrl;	// 客户端文件地址
 	private String	fileName;	// 文件名称
 	private Long	beginPos;	// 开始位置

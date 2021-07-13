@@ -2,14 +2,12 @@ package me.qping.upgrade.client.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import me.qping.upgrade.common.message.Client;
-import me.qping.upgrade.common.message.handler.FileTransferUtil;
 import me.qping.upgrade.common.message.handler.OnlineInboundMiddleware;
-import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.impl.RegisterForm;
-import me.qping.upgrade.common.message.impl.Response;
-import me.qping.upgrade.common.message.impl.ResponseBase;
+import me.qping.upgrade.common.message.impl.RegisterResponse;
+import me.qping.upgrade.common.constant.ResponseCode;
 
-import java.io.File;
+import java.util.Date;
 
 /**
  * @ClassName NettyClient
@@ -30,27 +28,25 @@ public class ClientOnlineHandler extends OnlineInboundMiddleware {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         // 注册到服务端
-        Msg msg = Msg.register();
-        msg.setClientId(client.getClientId());
+        RegisterForm msg = new RegisterForm();
+        msg.setNodeId(client.getNodeId());
         msg.setMessageId(client.getMessageId());
-        msg.setBody(new RegisterForm(1, "我想注册下"));
+        msg.setCreateDate(new Date());
         ctx.writeAndFlush(msg);
     }
 
     @Override
-    protected void handlerRegisterResponse(ChannelHandlerContext ctx, Msg msg) {
-
+    protected void handlerRegisterResponse(ChannelHandlerContext ctx, RegisterResponse msg) {
         // 需要注意连接成功和上线成功是两种状态
         // 可能存在一个客户端启动多次的情况，此处需要等服务器判断有没有同样clientId的客户端登陆过，服务器判定可以登陆后，返回客户端成功消
         // 息。 客户端标记状态为上线。
-        ResponseBase response = (ResponseBase) msg.getBody();
-        if(response.getCode() != Response.SUCCESS){
-            System.err.println("无法上线，错误信息：" + response.getMessage());
+        if(msg.getCode() != ResponseCode.SUCCESS){
+            System.err.println("无法上线，错误信息：" + msg.getMessage());
             client.setOnline(false);
             client.disconnect();
         }else{
             client.setOnline(true);
-            System.out.println(response.getMessage());
+            System.out.println(msg.getMessage());
         }
     }
 

@@ -9,11 +9,10 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.IdleStateHandler;
 import me.qping.upgrade.common.constant.ServerConstant;
-import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
-import me.qping.upgrade.common.message.handler.FileTransferHandler;
-import me.qping.upgrade.common.message.handler.ShellCommandHandler;
+import me.qping.upgrade.common.message.codec.Serialization;
+import me.qping.upgrade.common.message.handler.*;
 import me.qping.upgrade.server.netty.handler.ServerOnlineHandler;
 import org.springframework.stereotype.Component;
 
@@ -29,11 +28,11 @@ public class UpgradeServer {
     EventLoopGroup bossGroup = new NioEventLoopGroup();
     EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-
-
     ChannelFuture channelFuture;
 
     public void start(){
+
+        initServer();
 
         try{
             bootstrap.group(bossGroup, workerGroup)
@@ -46,11 +45,14 @@ public class UpgradeServer {
                             ch.pipeline().addLast(new IdleStateHandler(IdleThenClose,0,0));
                             ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(MaxFrameLength, 0, LengthFieldLength, 0, LengthFieldLength));
                             ch.pipeline().addLast(new LengthFieldPrepender(LengthFieldLength));
-                            ch.pipeline().addLast("decoder", new ObjDecoder(Msg.class));
-                            ch.pipeline().addLast("encoder", new ObjEncoder(Msg.class));
+                            ch.pipeline().addLast(new ObjDecoder());
+                            ch.pipeline().addLast(new ObjEncoder());
                             ch.pipeline().addLast(new ServerOnlineHandler("中心端"));
-                            ch.pipeline().addLast(new ShellCommandHandler(null, false));
-                            ch.pipeline().addLast(new FileTransferHandler("/Users/qping/Desktop/data/server"));
+                            ch.pipeline().addLast(new SecurityHandler());
+                            ch.pipeline().addLast(new ShellCommandResponseHandler());
+                            ch.pipeline().addLast(new FileDescInfoHandler("/Users/qping/Desktop/data/server"));
+                            ch.pipeline().addLast(new FileBurstInstructHandler());
+                            ch.pipeline().addLast(new FileBurstDataHandler("/Users/qping/Desktop/data/server"));
                         }
                     });
 
@@ -69,6 +71,10 @@ public class UpgradeServer {
             e.printStackTrace();
         }
 
+    }
+
+    private void initServer() {
+        Serialization.init();
     }
 
     public void close(){

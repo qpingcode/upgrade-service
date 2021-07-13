@@ -3,9 +3,10 @@ package me.qping.upgrade.common.message.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
-import me.qping.upgrade.common.message.Msg;
-
-import static me.qping.upgrade.common.constant.MsgType.*;
+import me.qping.upgrade.common.message.impl.Ping;
+import me.qping.upgrade.common.message.impl.Pong;
+import me.qping.upgrade.common.message.impl.RegisterForm;
+import me.qping.upgrade.common.message.impl.RegisterResponse;
 
 public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapter {
 
@@ -24,35 +25,39 @@ public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapt
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        Msg m = (Msg) msg;
-        switch (m.getType()) {
-            case REGISTER:
-                handlerRegister(ctx, m);
-                break;
-            case REGISTER_RESPONSE:
-                handlerRegisterResponse(ctx, m);
-                break;
-            case PING:
-                sendPong(ctx);
-                break;
-            case PONG:
-//                System.out.println(name + " get  pong  msg  from" + ctx.channel().remoteAddress());
-                break;
-            default:
-                super.channelRead(ctx, msg);
+        if(msg instanceof RegisterForm){
+            RegisterForm m = (RegisterForm) msg;
+            handlerRegister(ctx, m);
+            return;
         }
+
+        if(msg instanceof RegisterResponse){
+            RegisterResponse m = (RegisterResponse) msg;
+            handlerRegisterResponse(ctx, m);
+            return;
+        }
+
+        if(msg instanceof Ping){
+            sendPong(ctx);
+            return;
+        }
+
+        if(msg instanceof Pong){
+            return;
+        }
+
+        super.channelRead(ctx, msg);
+
     }
 
 
     protected void sendPing(ChannelHandlerContext ctx) {
-        ctx.channel().writeAndFlush(Msg.ping());
+        ctx.channel().writeAndFlush(new Ping());
         heartbeatCount++;
-//        System.out.println(name + " send ping msg to " + ctx.channel().remoteAddress() + " , count :" + heartbeatCount);
     }
 
     protected void sendPong(ChannelHandlerContext ctx) {
-        ctx.channel().writeAndFlush(Msg.pong());
-        heartbeatCount++;
+        ctx.channel().writeAndFlush(new Pong());
     }
 
     @Override
@@ -80,12 +85,12 @@ public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapt
         ctx.close();
     }
 
-    protected void handlerRegister(ChannelHandlerContext ctx, Msg msg){
-        System.out.println(((Msg) msg).getClientId() + " register");
+    protected void handlerRegister(ChannelHandlerContext ctx, RegisterForm msg){
+        System.out.println("register: " + msg.getNodeId());
     }
 
-    protected void handlerRegisterResponse(ChannelHandlerContext ctx, Msg msg) {
-        System.out.println(((Msg) msg).getClientId() + " register response");
+    protected void handlerRegisterResponse(ChannelHandlerContext ctx, RegisterResponse msg) {
+        System.out.println("register response");
     }
 
     protected void handlerAllIdle(ChannelHandlerContext ctx) {

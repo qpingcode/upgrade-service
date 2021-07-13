@@ -3,16 +3,11 @@ package me.qping.upgrade.common.message.handler;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.RuntimeUtil;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import me.qping.upgrade.common.constant.MsgType;
+import io.netty.channel.SimpleChannelInboundHandler;
+import me.qping.upgrade.common.constant.ResponseCode;
 import me.qping.upgrade.common.message.Client;
-import me.qping.upgrade.common.message.Msg;
-import me.qping.upgrade.common.message.MsgStorage;
-import me.qping.upgrade.common.message.impl.Response;
-import me.qping.upgrade.common.message.impl.ResponseBase;
-
-import static me.qping.upgrade.common.constant.MsgType.SHELL_COMMAND;
-import static me.qping.upgrade.common.constant.MsgType.SHELL_COMMAND_RESPONSE;
+import me.qping.upgrade.common.message.impl.ShellCommand;
+import me.qping.upgrade.common.message.impl.ShellCommandResponse;
 
 /**
  * @ClassName NettyClient
@@ -21,53 +16,37 @@ import static me.qping.upgrade.common.constant.MsgType.SHELL_COMMAND_RESPONSE;
  * @Date 2021/6/28 17:12
  * @Version 1.0
  **/
-public class ShellCommandHandler extends ChannelInboundHandlerAdapter {
+public class ShellCommandHandler extends SimpleChannelInboundHandler<ShellCommand> {
 
-    boolean executable = false;
 
     Client client;
 
-    public ShellCommandHandler(Client client, boolean executable) {
+    public ShellCommandHandler(Client client) {
         this.client = client;
-        this.executable = executable;
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object message) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ShellCommand msg) throws Exception {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
 
-        Msg msg = (Msg) message;
-        if(msg.getType() == SHELL_COMMAND){
+                System.out.println("开始执行: " + msg.toString());
 
-            if(!executable){
-                return;
-            }
-
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-
-                    System.out.println("开始执行: " + msg.toString());
-
-                    Msg reply = new Msg();
-                    reply.setMessageId(msg.getMessageId());
-                    reply.setClientId(client.getClientId());
-                    reply.setType(MsgType.SHELL_COMMAND_RESPONSE);
-                    try{
-                        String result = RuntimeUtil.execForStr((String) msg.getBody());
-                        reply.setBody(ResponseBase.of(Response.SUCCESS, result));
-                    }catch (IORuntimeException e){
-                        reply.setBody(ResponseBase.of(Response.ERR_COMMAND_ERROR, e.getMessage()));
-                    }
-                    ctx.writeAndFlush(reply);
-
+                ShellCommandResponse reply = new ShellCommandResponse();
+                reply.setMessageId(msg.getMessageId());
+                try{
+                    String result = RuntimeUtil.execForStr((String) msg.getCommand());
+                    reply.setMessage(result);
+                    reply.setCode(ResponseCode.SUCCESS);
+                }catch (IORuntimeException e){
+                    reply.setMessage(e.getMessage());
+                    reply.setCode(ResponseCode.ERR_COMMAND_ERROR);
                 }
-            }).start();
+                System.out.println("结束执行: " + msg.toString());
+                ctx.writeAndFlush(reply);
 
-        } else if (msg.getType() == SHELL_COMMAND_RESPONSE){
-            MsgStorage.recive(msg);
-            System.out.println("执行结果: " + msg.toString());
-        }else{
-            super.channelRead(ctx, message);
-        }
+            }
+        }).start();
     }
 }

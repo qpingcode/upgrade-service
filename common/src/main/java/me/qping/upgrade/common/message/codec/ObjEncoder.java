@@ -5,6 +5,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import me.qping.upgrade.common.message.Msg;
 
+import java.nio.charset.Charset;
+
+import static me.qping.upgrade.common.constant.ServerConstant.MSG_PROTOCAL_ID;
+
 /**
  * 编码器
  * @author admin
@@ -12,17 +16,11 @@ import me.qping.upgrade.common.message.Msg;
  */
 public class ObjEncoder extends MessageToByteEncoder<Object> {
 
-    private Class<?> genericClass;
-
-    public ObjEncoder(Class<?> genericClass) {
-        this.genericClass = genericClass;
-    }
-
     @Override
     protected void encode(ChannelHandlerContext ctx, Object in, ByteBuf out)  {
         byte[] data = Serialization.serialize(in);
-//        Msg msg = (Msg)in;
-//        out.writeByte(msg.getType());
+        out.writeCharSequence(MSG_PROTOCAL_ID, Charset.forName("utf8"));
+        out.writeByte(Serialization.getMsgType(in.getClass()));
         out.writeBytes(data);
     }
 

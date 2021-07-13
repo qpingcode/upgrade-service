@@ -1,11 +1,9 @@
 package me.qping.upgrade.common.message.handler;
 
-import me.qping.upgrade.common.constant.MsgType;
-import me.qping.upgrade.common.message.Msg;
+import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.impl.FileBurstData;
 import me.qping.upgrade.common.message.impl.FileBurstInstruct;
 import me.qping.upgrade.common.message.impl.FileDescInfo;
-import me.qping.upgrade.common.message.impl.FileStatus;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,18 +34,14 @@ public class FileTransferUtil {
         burstDataMap.remove(fileKey);
     }
 
-    public static Msg buildRequestTransferFile(long messageId, String fileUrl, String fileName, String fileType, Long fileSize) {
+    public static FileDescInfo buildRequestTransferFile(long messageId, String fileUrl, String fileName, String fileType, Long fileSize) {
         FileDescInfo fileDescInfo = new FileDescInfo();
+        fileDescInfo.setMessageId(messageId);
         fileDescInfo.setFileUrl(fileUrl);
         fileDescInfo.setFileName(fileName);
         fileDescInfo.setFileType(fileType);
         fileDescInfo.setFileSize(fileSize);
-
-        Msg fileTransferProtocol = new Msg();
-        fileTransferProtocol.setMessageId(messageId);
-        fileTransferProtocol.setType(MsgType.FILE_DESC_INFO); // 0 请求传输文件、1 文件传输指令、2 文件传输数据
-        fileTransferProtocol.setBody(fileDescInfo);
-        return fileTransferProtocol;
+        return fileDescInfo;
     }
 
     /**
@@ -57,47 +51,17 @@ public class FileTransferUtil {
      * @param readPosition    读取位置
      * @return                传输协议
      */
-    public static Msg buildTransferInstruct(long messageId, Integer status, String clientFileUrl, Long readPosition) {
+    public static FileBurstInstruct buildTransferInstruct(long messageId, Integer status, String clientFileUrl, Long readPosition, Long totalSize) {
 
         FileBurstInstruct fileBurstInstruct = new FileBurstInstruct();
+        fileBurstInstruct.setMessageId(messageId);
         fileBurstInstruct.setStatus(status);
         fileBurstInstruct.setClientFileUrl(clientFileUrl);
         fileBurstInstruct.setReadPosition(readPosition);
+        fileBurstInstruct.setTotalSize(totalSize);
 
-        Msg fileTransferProtocol = new Msg();
-        fileTransferProtocol.setMessageId(messageId);
-        fileTransferProtocol.setType(MsgType.FILE_BURST_INSTRUCT);
-        fileTransferProtocol.setBody(fileBurstInstruct);
-
-        return fileTransferProtocol;
+        return fileBurstInstruct;
     }
-
-    /**
-     * 构建对象；文件传输指令(服务端)
-     *
-     * @return 传输协议
-     */
-    public static Msg buildTransferInstruct(long messageId, FileBurstInstruct fileBurstInstruct) {
-        Msg fileTransferProtocol = new Msg();
-        fileTransferProtocol.setMessageId(messageId);
-        fileTransferProtocol.setType(MsgType.FILE_BURST_INSTRUCT);
-        fileTransferProtocol.setBody(fileBurstInstruct);
-        return fileTransferProtocol;
-    }
-
-    /**
-     * 构建对象；文件传输数据(客户端)
-     *
-     * @return 传输协议
-     */
-    public static Msg buildTransferData(long messageId, FileBurstData fileBurstData) {
-        Msg fileTransferProtocol = new Msg();
-        fileTransferProtocol.setMessageId(messageId);
-        fileTransferProtocol.setType(MsgType.FILE_BURST_DATA);
-        fileTransferProtocol.setBody(fileBurstData);
-        return fileTransferProtocol;
-    }
-
 
 
     public static int SEND_FILEDATA_LENGTH = 1024 * 100;    // 一次 100 K
