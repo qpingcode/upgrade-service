@@ -20,6 +20,7 @@ public class FileBurstInstructHandler extends SimpleChannelInboundHandler<FileBu
         if (FileStatus.COMPLETE == fileBurstInstruct.getStatus()) {
             return;
         }
+
         FileBurstData fileBurstData = FileTransferUtil.readFile(fileBurstInstruct.getClientFileUrl(),
                 fileBurstInstruct.getReadPosition());
 

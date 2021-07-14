@@ -21,6 +21,8 @@ public class FileDescInfoHandler extends SimpleChannelInboundHandler<FileDescInf
 
     String basePath;
 
+    ProgressStorage storage = ProgressStorage.getInstance();
+
     public FileDescInfoHandler(String basePath) {
         this.basePath = basePath;
     }
@@ -39,7 +41,7 @@ public class FileDescInfoHandler extends SimpleChannelInboundHandler<FileDescInf
 
 
         // 文件接收方保存传输进度
-        FileBurstInstruct burstInstructOld = ProgressStorage.getInstance().findByClientIdAndFileUrl(session.getNodeId(), fileDescInfo.getFileUrl());
+        FileBurstInstruct burstInstructOld = storage.findByNodeIdAndFileUrl(session.getNodeId(), fileDescInfo.getFileUrl());
 
         if (null != burstInstructOld) {
             if (burstInstructOld.getStatus() == FileStatus.COMPLETE) {

@@ -4,7 +4,7 @@ import com.dyuproject.protostuff.LinkedBuffer;
 import com.dyuproject.protostuff.ProtostuffIOUtil;
 import com.dyuproject.protostuff.Schema;
 import com.dyuproject.protostuff.runtime.RuntimeSchema;
-import me.qping.upgrade.common.constant.MsgTypeEnum;
+import me.qping.upgrade.common.constant.MsgType;
 import org.objenesis.Objenesis;
 import org.objenesis.ObjenesisStd;
 
@@ -80,8 +80,8 @@ public class Serialization {
     }
 
     public static void init(){
-        System.out.println("开始加载协议对象，共：" + MsgTypeEnum.values().length);
-        for (MsgTypeEnum msgTypeEnum : MsgTypeEnum.values()) {
+        System.out.println("开始加载协议对象，共：" + MsgType.values().length);
+        for (MsgType msgTypeEnum : MsgType.values()) {
             System.out.println(String.format("消息type: %s  消息Bean: %s", msgTypeEnum.val(), msgTypeEnum.protocolStruct().getName()));
             setClass(msgTypeEnum.val(), msgTypeEnum.protocolStruct());
         }

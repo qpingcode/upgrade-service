@@ -3,10 +3,7 @@ package me.qping.upgrade.common.message.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
-import me.qping.upgrade.common.message.impl.Ping;
-import me.qping.upgrade.common.message.impl.Pong;
-import me.qping.upgrade.common.message.impl.RegisterForm;
-import me.qping.upgrade.common.message.impl.RegisterResponse;
+import me.qping.upgrade.common.message.impl.*;
 
 public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapter {
 
@@ -25,30 +22,40 @@ public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapt
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+
+        // 服务端接收到注册请求
         if(msg instanceof RegisterForm){
             RegisterForm m = (RegisterForm) msg;
             handlerRegister(ctx, m);
             return;
         }
 
+        // 客户端接收注册返回
         if(msg instanceof RegisterResponse){
             RegisterResponse m = (RegisterResponse) msg;
             handlerRegisterResponse(ctx, m);
             return;
         }
 
+        // 客户端发起ping
         if(msg instanceof Ping){
             sendPong(ctx);
             return;
         }
 
+        // 服务端返回pong
         if(msg instanceof Pong){
             return;
         }
 
-        super.channelRead(ctx, msg);
+        if(msg instanceof ForceOffline){
+            ForceOffline m = (ForceOffline) msg;
+            handlerForceOffline(ctx, m);
+        }
 
+        super.channelRead(ctx, msg);
     }
+
 
 
     protected void sendPing(ChannelHandlerContext ctx) {
@@ -100,5 +107,6 @@ public abstract class OnlineInboundMiddleware extends ChannelInboundHandlerAdapt
         System.err.println("---WRITER_IDLE---");
     }
     protected void handlerReaderIdle(ChannelHandlerContext ctx) { System.err.println("---READER_IDLE---"); }
+    protected void handlerForceOffline(ChannelHandlerContext ctx, ForceOffline m){System.err.println("---FORCE_OFFLINE---");}
 
 }

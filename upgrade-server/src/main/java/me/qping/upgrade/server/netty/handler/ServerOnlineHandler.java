@@ -2,17 +2,16 @@ package me.qping.upgrade.server.netty.handler;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import me.qping.upgrade.common.constant.ResponseCode;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.handler.OnlineInboundMiddleware;
 import me.qping.upgrade.common.message.impl.RegisterForm;
 import me.qping.upgrade.common.message.impl.RegisterResponse;
-import me.qping.upgrade.common.constant.ResponseCode;
 import me.qping.upgrade.common.session.Session;
 import me.qping.upgrade.common.session.SessionUtil;
 
 import java.text.SimpleDateFormat;
 
-import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
 import static me.qping.upgrade.common.constant.ResponseCode.ERR_OTHER;
 
 
@@ -31,6 +30,7 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        System.out.println("removed");
         Channel channel = ctx.channel();
         SessionUtil.unBindSession(channel);
     }
@@ -38,6 +38,7 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
 
     @Override
     protected void handlerReaderIdle(ChannelHandlerContext ctx) {
+        System.out.println("closed");
         SessionUtil.unBindSession(ctx.channel()); // add by qping 2021-07-13
         ctx.close();
     }

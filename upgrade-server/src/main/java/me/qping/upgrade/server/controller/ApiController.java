@@ -3,6 +3,7 @@ package me.qping.upgrade.server.controller;
 import io.netty.channel.Channel;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.MsgStorage;
+import me.qping.upgrade.common.message.impl.ForceOffline;
 import me.qping.upgrade.common.message.impl.ShellCommandResponse;
 import me.qping.upgrade.common.session.Session;
 import me.qping.upgrade.common.session.SessionUtil;
@@ -28,38 +29,40 @@ public class ApiController {
     @Autowired
     UpgradeServer upgradeServer;
 
-    @RequestMapping(value = "/client/list")
+    @RequestMapping(value = "/node/list")
     @ResponseBody
-    public List<Session> clientList(){
+    public List<Session> nodeList(){
         List<Session> list = new ArrayList<>();
 
-        for(Long clientId : SessionUtil.getNodeChannelMap().keySet()){
-            Session session = SessionUtil.getSession(clientId);
+        for(Long nodeId : SessionUtil.getNodeChannelMap().keySet()){
+            Session session = SessionUtil.getSession(nodeId);
             list.add(session);
         }
         return list;
     }
 
-    @RequestMapping(value = "/client/kick")
+    @RequestMapping(value = "/node/kick")
     @ResponseBody
-    public boolean kickClient(long clientId){
-        Channel channel = SessionUtil.getNodeChannelMap().get(clientId);
+    public boolean kickNode(long nodeId){
+        Channel channel = SessionUtil.getChannel(nodeId);
+
+        ForceOffline cmd = new ForceOffline();
+        cmd.setMessageId(SessionUtil.getMessageId());
 
         if(channel == null){
             return false;
         }
 
-        SessionUtil.unBindSession(channel);
-        channel.close();
+        channel.writeAndFlush(cmd);
         return true;
     }
 
     @RequestMapping(value = "/client/executeShell")
     @ResponseBody
-    public ShellCommandResponse executeShell(long clientId, String shell){
+    public ShellCommandResponse executeShell(long nodeId, String shell){
         try {
 
-            long messageId = SessionUtil.executeShell(clientId, shell);
+            long messageId = SessionUtil.executeShell(nodeId, shell);
 
             ShellCommandResponse result = MsgStorage.get(messageId, 10 * 1000);
             return result;
@@ -72,9 +75,9 @@ public class ApiController {
 
     @RequestMapping(value = "/client/transferTo")
     @ResponseBody
-    public void transferTo(long clientId, String serverFilePath){
+    public void transferTo(long nodeId, String serverFilePath){
         try {
-            SessionUtil.transferTo(clientId, serverFilePath);
+            SessionUtil.transferTo(nodeId, serverFilePath);
         } catch (ServerException e) {
             e.printStackTrace();
         }
@@ -82,9 +85,9 @@ public class ApiController {
 
     @RequestMapping(value = "/client/transferFrom")
     @ResponseBody
-    public void transferFrom(long clientId, String clientFilePath){
+    public void transferFrom(long nodeId, String clientFilePath){
         try {
-            SessionUtil.transferFrom(clientId, clientFilePath);
+            SessionUtil.transferFrom(nodeId, clientFilePath);
         } catch (Exception e) {
             e.printStackTrace();
         }

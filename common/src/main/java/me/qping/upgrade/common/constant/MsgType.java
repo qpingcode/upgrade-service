@@ -2,14 +2,15 @@ package me.qping.upgrade.common.constant;
 
 import me.qping.upgrade.common.message.impl.*;
 
-public enum MsgTypeEnum {
+public enum MsgType {
 
     REGISTER((byte) 1, RegisterForm.class),                         // 客户端向服务端发起注册请求
     REGISTER_RESPONSE((byte) 2, RegisterResponse.class),            // 服务端响应客户端的注册
     PING((byte) 3, Ping.class),                                     // 客户端空闲时向服务端 ping
     PONG((byte) 4, Pong.class),                                     // 服务端回应客户端ping 发出 pong
-    SHELL_COMMAND((byte) 5, ShellCommand.class),
-    SHELL_COMMAND_RESPONSE((byte) 10, ShellCommandResponse.class),
+    SHELL_COMMAND((byte) 5, ShellCommand.class),                    // 执行shell请求
+    SHELL_COMMAND_RESPONSE((byte) 6, ShellCommandResponse.class),   // 执行shell返回
+    FORCE_OFFLINE((byte) 7, ForceOffline.class),                    // 强制客户端下线命令
     FILE_DESC_INFO((byte) 16, FileDescInfo.class),                  // 文件传输请求
     FILE_BURST_INSTRUCT((byte) 17, FileBurstInstruct.class),        // 文件传输指令
     FILE_BURST_DATA((byte) 18, FileBurstData.class)                 // 文件传输数据
@@ -18,7 +19,7 @@ public enum MsgTypeEnum {
     byte val;
     Class<?> protocolStruct;
 
-    private MsgTypeEnum(byte val, Class<?> protocolStruct) {
+    private MsgType(byte val, Class<?> protocolStruct) {
         this.val = val;
         this.protocolStruct = protocolStruct;
     }

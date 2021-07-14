@@ -61,7 +61,7 @@ public class SessionUtil {
     }
 
     public static boolean hasLogin(Channel channel) {
-        return channel != null && channel.hasAttr(Attributes.SESSION);
+        return channel != null && channel.hasAttr(Attributes.SESSION) && channel.attr(Attributes.SESSION).get() != null;
     }
 
     public static Session getSession(Channel channel) {
@@ -87,6 +87,10 @@ public class SessionUtil {
 
     public static Map<Long, Channel> getNodeChannelMap() {
         return nodeChannelMap;
+    }
+
+    public static long getMessageId(){
+        return messageIdGen.nextId();
     }
 
 

@@ -30,7 +30,7 @@ public class ProgressStorage {
     }
 
 
-    public FileBurstInstruct findByClientIdAndFileUrl(long clientId, String fileUrl) {
+    public FileBurstInstruct findByNodeIdAndFileUrl(long clientId, String fileUrl) {
         return null;
     }
 

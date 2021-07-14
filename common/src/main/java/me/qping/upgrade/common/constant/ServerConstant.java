@@ -1,6 +1,9 @@
 package me.qping.upgrade.common.constant;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+
+import java.nio.charset.Charset;
 
 /**
  * @ClassName ServerConstant
@@ -11,7 +14,10 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  **/
 public class ServerConstant {
 
-    public static final String MSG_PROTOCAL_ID = "Rx";      // 协议定义消息开头
+    public static final String MSG_PROTOCAL_ID = "Rx";                                          // 协议定义消息开头
+    public static final Charset MSG_PROTOCAL_CHARSET = Charset.forName("utf8");                 // 协议定义消息字符集
+    public static final int MSG_PROTOCAL_ID_LENGTH = ByteBufUtil.utf8Bytes(MSG_PROTOCAL_ID);    // 协议定义消息开头长度
+
     public static final int SERVER_NODE_ID = 0;             // server 的 workId， 用于生成消息id
 
     public static final String Host = "127.0.0.1";
