@@ -13,8 +13,6 @@ import me.qping.upgrade.common.message.Msg;
 @NoArgsConstructor
 public class FileBurstInstruct extends Msg {
 
-    private long clientId;
-
     private int status;       // FileStatus ｛0开始、1中间、2结尾、3完成｝
 
     private String clientFileUrl; // 文件URL

@@ -21,8 +21,8 @@ public interface ResponseCode {
 
     // 服务端异常
     int ERR_REG_REPEAT = -102;           // 重复注册
-    int ERR_CLIENT_ID_ILLEGAL = -103;    // nodeId 非法
-    int ERR_CLIENT_OFFLINE = -104;       // 客户端下线
+    int ERR_NODE_ID_ILLEGAL = -103;      // nodeId 非法
+    int ERR_NODE_OFFLINE = -104;         // 客户端下线
 
     // 客户端异常
     int ERR_COMMAND_ERROR = -205;

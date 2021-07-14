@@ -21,14 +21,14 @@ public class FileProgress extends Msg {
     @DataBaseColumn("id")
     private int id;
 
-    @DataBaseColumn("client_id")
-    private long clientId;
+    @DataBaseColumn("node_id")
+    private long nodeId;
 
     @DataBaseColumn("status")
     private int status;       // FileStatus ｛0开始、1中间、2结尾、3完成｝
 
-    @DataBaseColumn("client_file_url")
-    private String clientFileUrl; // 文件URL
+    @DataBaseColumn("file_url")
+    private String fileUrl; // 文件URL
 
     @DataBaseColumn("total_size")
     private long totalSize;       // 文件总大小

@@ -15,7 +15,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static me.qping.upgrade.common.constant.ResponseCode.ERR_CLIENT_OFFLINE;
+import static me.qping.upgrade.common.constant.ResponseCode.ERR_NODE_OFFLINE;
 import static me.qping.upgrade.common.constant.ResponseCode.ERR_FILE_NOT_EXISTS;
 import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
 
@@ -108,7 +108,7 @@ public class SessionUtil {
 
         Channel channel = getChannel(nodeId);
         if(channel == null){
-            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + nodeId);
+            throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
         }
 
         channel.writeAndFlush(msg);
@@ -134,7 +134,7 @@ public class SessionUtil {
 
         Channel channel = getChannel(nodeId);
         if(channel == null){
-            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + nodeId);
+            throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
         }
 
         System.out.println("开发下发文件：" + serverFilePath + "，到客户端：" + nodeId );
@@ -156,7 +156,7 @@ public class SessionUtil {
 
         Channel channel = getChannel(nodeId);
         if(channel == null){
-            throw new ServerException(ERR_CLIENT_OFFLINE, "客户端已下线" + nodeId);
+            throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
         }
 
         System.out.println("开始接收文件：" + clientFilePath);

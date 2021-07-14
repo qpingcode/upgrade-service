@@ -53,11 +53,13 @@ public class ApiController {
             return false;
         }
 
+        System.out.println("强制下线客户端：" + nodeId);
+
         channel.writeAndFlush(cmd);
         return true;
     }
 
-    @RequestMapping(value = "/client/executeShell")
+    @RequestMapping(value = "/node/executeShell")
     @ResponseBody
     public ShellCommandResponse executeShell(long nodeId, String shell){
         try {
@@ -73,7 +75,7 @@ public class ApiController {
         }
     }
 
-    @RequestMapping(value = "/client/transferTo")
+    @RequestMapping(value = "/node/transferTo")
     @ResponseBody
     public void transferTo(long nodeId, String serverFilePath){
         try {
@@ -83,7 +85,7 @@ public class ApiController {
         }
     }
 
-    @RequestMapping(value = "/client/transferFrom")
+    @RequestMapping(value = "/node/transferFrom")
     @ResponseBody
     public void transferFrom(long nodeId, String clientFilePath){
         try {

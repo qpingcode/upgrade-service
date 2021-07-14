@@ -56,7 +56,7 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
             long nodeId = msg.getNodeId();
 
             if(nodeId <= 0){
-                throw new ServerException(ResponseCode.ERR_CLIENT_ID_ILLEGAL, "客户端上线失败，id非法：" + nodeId);
+                throw new ServerException(ResponseCode.ERR_NODE_ID_ILLEGAL, "客户端上线失败，id非法：" + nodeId);
             }
 
             // 重复上线
