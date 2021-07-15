@@ -11,5 +11,4 @@ public interface Client {
 
     boolean isOnline();
     void setOnline(boolean online);
-    void sendMsg(Msg msg);
 }

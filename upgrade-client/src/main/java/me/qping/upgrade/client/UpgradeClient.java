@@ -12,15 +12,15 @@ import io.netty.handler.timeout.IdleStateHandler;
 import me.qping.upgrade.client.handler.ClientOnlineHandler;
 import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.message.Client;
-import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
 import me.qping.upgrade.common.message.codec.Serialization;
-import me.qping.upgrade.common.message.handler.FileBurstDataHandler;
-import me.qping.upgrade.common.message.handler.FileBurstInstructHandler;
-import me.qping.upgrade.common.message.handler.FileDescInfoHandler;
+import me.qping.upgrade.common.message.handler.FileDescHandler;
+import me.qping.upgrade.common.message.handler.FileProgressHandler;
 import me.qping.upgrade.common.message.handler.ShellCommandHandler;
+import me.qping.upgrade.common.message.impl.FileProgressListener;
+import me.qping.upgrade.common.message.progress.ProgressStorage;
 import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
 
@@ -55,7 +55,7 @@ public class UpgradeClient implements Client {
     String installDir;
 
 
-    public long getNodeId(){
+    public long getNodeId() {
         return nodeId;
     }
 
@@ -74,24 +74,8 @@ public class UpgradeClient implements Client {
         online.set(flag);
     }
 
-    @Override
-    public void sendMsg(Msg msg) {
-        if(stopped.get()){
-            throw new RuntimeException("客户端已停止工作");
-        }
 
-        if(!online.get()){
-            throw new RuntimeException("客户端不在线");
-        }
-
-        if(channel == null || !channel.isActive()){
-            throw new RuntimeException("客户端通道中断");
-        }
-
-        channel.writeAndFlush(msg);
-    }
-
-    public static Properties readConfig(){
+    public static Properties readConfig() {
         ClassPathResource resource = new ClassPathResource("config");
         Properties properties = new Properties();
         try {
@@ -103,7 +87,7 @@ public class UpgradeClient implements Client {
         System.out.println("==========================");
         System.out.println("读取配置文件config");
         for (String key : properties.stringPropertyNames()) {
-            System.out.println(key + " : " + (key.indexOf("password") > -1  ? "*" : properties.getProperty(key)));
+            System.out.println(key + " : " + (key.indexOf("password") > -1 ? "*" : properties.getProperty(key)));
         }
         System.out.println("==========================");
         return properties;
@@ -116,13 +100,23 @@ public class UpgradeClient implements Client {
         nodeId = Long.parseLong(properties.getProperty("nodeId"));
         installDir = properties.getProperty("installDir");
 
-        if(nodeId < 1 || nodeId > SnowFlakeId.maxWorkerId ){
+        if (nodeId < 1 || nodeId > SnowFlakeId.maxWorkerId) {
             throw new RuntimeException("客户端ID必须大于0且小于" + (SnowFlakeId.maxWorkerId + 1));
         }
 
-        idGen = new SnowFlakeId(nodeId,  1);
+        idGen = new SnowFlakeId(nodeId, 1);
 
         Serialization.init();
+
+        String jdbcUrl = properties.getProperty("jdbc_url");
+        String jdbcUsername = properties.getProperty("jdbc_username");
+        String jdbcPassword = properties.getProperty("jdbc_password");
+        try {
+            ProgressStorage.getInstance().init(jdbcUrl, jdbcUsername, jdbcPassword);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("初始化数据库失败：" + e.getMessage());
+        }
 
     }
 
@@ -144,16 +138,15 @@ public class UpgradeClient implements Client {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new IdleStateHandler(0,0, IdleThenPing));
+                        ch.pipeline().addLast(new IdleStateHandler(0, 0, IdleThenPing));
                         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(MaxFrameLength, 0, LengthFieldLength, 0, LengthFieldLength));
                         ch.pipeline().addLast(new LengthFieldPrepender(LengthFieldLength));
                         ch.pipeline().addLast(new ObjDecoder());
                         ch.pipeline().addLast(new ObjEncoder());
-                        ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + nodeId , UpgradeClient.this));
+                        ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + nodeId, UpgradeClient.this));
                         ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this));
-                        ch.pipeline().addLast(new FileDescInfoHandler(installDir));
-                        ch.pipeline().addLast(new FileBurstInstructHandler());
-                        ch.pipeline().addLast(new FileBurstDataHandler(installDir));
+                        ch.pipeline().addLast(new FileDescHandler(installDir));
+                        ch.pipeline().addLast(new FileProgressHandler(installDir));
                     }
 
                 });
@@ -166,11 +159,11 @@ public class UpgradeClient implements Client {
     public void disconnect() {
         stopped.set(true);
 
-        if(channel != null && channel.isActive()){
+        if (channel != null && channel.isActive()) {
             channel.close();
         }
 
-        if(group != null) {
+        if (group != null) {
             group.shutdownGracefully();
         }
     }
@@ -181,7 +174,7 @@ public class UpgradeClient implements Client {
             return;
         }
 
-        if(stopped.get()){
+        if (stopped.get()) {
             return;
         }
 

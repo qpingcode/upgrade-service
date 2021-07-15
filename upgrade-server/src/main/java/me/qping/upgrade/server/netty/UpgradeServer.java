@@ -13,6 +13,8 @@ import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
 import me.qping.upgrade.common.message.codec.Serialization;
 import me.qping.upgrade.common.message.handler.*;
+import me.qping.upgrade.common.message.impl.FileProgressListener;
+import me.qping.upgrade.common.message.progress.ProgressStorage;
 import me.qping.upgrade.server.netty.handler.ServerOnlineHandler;
 import org.springframework.stereotype.Component;
 
@@ -50,9 +52,8 @@ public class UpgradeServer {
                             ch.pipeline().addLast(new ServerOnlineHandler("中心端"));
                             ch.pipeline().addLast(new SecurityHandler());
                             ch.pipeline().addLast(new ShellCommandResponseHandler());
-                            ch.pipeline().addLast(new FileDescInfoHandler("/Users/qping/Desktop/data/server"));
-                            ch.pipeline().addLast(new FileBurstInstructHandler());
-                            ch.pipeline().addLast(new FileBurstDataHandler("/Users/qping/Desktop/data/server"));
+                            ch.pipeline().addLast(new FileDescHandler("/Users/qping/Desktop/data/server"));
+                            ch.pipeline().addLast(new FileProgressHandler("/Users/qping/Desktop/data/server"));
                         }
                     });
 
@@ -75,6 +76,33 @@ public class UpgradeServer {
 
     private void initServer() {
         Serialization.init();
+
+        try {
+            ProgressStorage.getInstance().init(ServerConstant.JdbcUrl, ServerConstant.JdbcUsername, JdbcPassword);
+        } catch (Exception e) {
+            throw new RuntimeException("初始化数据库失败：" + e.getMessage());
+        }
+
+        ProgressStorage storage = ProgressStorage.getInstance();
+        FileProgressHandler.addListener(new FileProgressListener() {
+            @Override
+            public void end(int progressId, long fileNodeId, String sourceUrl) {
+                System.out.println(String.format("文件传输成功，源路径：%s 源节点：%s", sourceUrl, fileNodeId));
+                storage.tagEnd(progressId);
+            }
+
+            @Override
+            public void progress(int progressId, long fileNodeId, String sourceUrl, long totalSize, long position) {
+                storage.tagProgress(progressId, totalSize, position);
+            }
+
+            @Override
+            public void error(int progressId, long fileNodeId, String sourceUrl, String errorMsg) {
+                System.err.println(String.format("文件传输出错啦，源路径：%s 源节点：%s 错误信息：%s", sourceUrl, fileNodeId, errorMsg));
+                storage.tagError(progressId, errorMsg);
+            }
+        });
+
     }
 
     public void close(){

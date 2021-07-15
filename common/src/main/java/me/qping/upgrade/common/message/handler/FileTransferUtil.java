@@ -1,15 +1,15 @@
 package me.qping.upgrade.common.message.handler;
 
-import me.qping.upgrade.common.constant.FileStatus;
-import me.qping.upgrade.common.message.impl.FileBurstData;
-import me.qping.upgrade.common.message.impl.FileBurstInstruct;
-import me.qping.upgrade.common.message.impl.FileDescInfo;
+import me.qping.upgrade.common.message.impl.FileData;
+import me.qping.upgrade.common.message.impl.FileDesc;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.nio.file.Path;
+
+import static me.qping.upgrade.common.constant.ServerConstant.DEFAULT_CHUCK_SIZE;
+import static me.qping.upgrade.common.constant.ServerConstant.MIN_CHUCK_SIZE;
 
 /**
  * @ClassName FileUtil
@@ -20,109 +20,58 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 public class FileTransferUtil {
 
-    public static Map<Long, FileBurstInstruct> burstDataMap = new ConcurrentHashMap<>();
-
-    public static FileBurstInstruct get(Long fileKey){
-        return burstDataMap.get(fileKey);
-    }
-
-    public static void put(Long fileKey, FileBurstInstruct fileBurstInstruct){
-        burstDataMap.put(fileKey, fileBurstInstruct);
-    }
-
-    public static void remove(Long fileKey){
-        burstDataMap.remove(fileKey);
-    }
-
-    public static FileDescInfo buildRequestTransferFile(long messageId, String fileUrl, String fileName, String fileType, Long fileSize) {
-        FileDescInfo fileDescInfo = new FileDescInfo();
-        fileDescInfo.setMessageId(messageId);
-        fileDescInfo.setFileUrl(fileUrl);
-        fileDescInfo.setFileName(fileName);
-        fileDescInfo.setFileType(fileType);
-        fileDescInfo.setFileSize(fileSize);
-        return fileDescInfo;
-    }
-
-    /**
-     * 构建对象；文件传输指令(服务端)
-     * @param status          0请求传输文件、1文件传输指令、2文件传输数据
-     * @param clientFileUrl   客户端文件地址
-     * @param readPosition    读取位置
-     * @return                传输协议
-     */
-    public static FileBurstInstruct buildTransferInstruct(long messageId, Integer status, String clientFileUrl, Long readPosition, Long totalSize) {
-
-        FileBurstInstruct fileBurstInstruct = new FileBurstInstruct();
-        fileBurstInstruct.setMessageId(messageId);
-        fileBurstInstruct.setStatus(status);
-        fileBurstInstruct.setClientFileUrl(clientFileUrl);
-        fileBurstInstruct.setReadPosition(readPosition);
-        fileBurstInstruct.setTotalSize(totalSize);
-
-        return fileBurstInstruct;
-    }
-
-
-    public static int SEND_FILEDATA_LENGTH = 1024 * 100;    // 一次 100 K
-
-    public static FileBurstData readFile(String fileUrl, Long readPosition) throws IOException {
+    public static FileData readFile(long totalSize, String fileUrl, Long readPosition, int chunkSize){
         File file = new File(fileUrl);
+        FileData fileData = new FileData();
+
+        // 不能分的太小
+        if(chunkSize < MIN_CHUCK_SIZE){
+            chunkSize = MIN_CHUCK_SIZE;
+        }
+
         // r: 只读模式 rw:读写模式
-        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
+
+            long rafLen = randomAccessFile.length();
+            if(rafLen != totalSize){
+                throw new Exception(String.format("源文件大小已经发生改变，原始 %s 当前 %s，停止传输文件", totalSize, rafLen));
+            }
+
+
+            randomAccessFile.seek(readPosition);
+            byte[] bytes = new byte[chunkSize];
+            int readSize = randomAccessFile.read(bytes);
+            if (readSize <= 0) {
+                randomAccessFile.close();
+                fileData.setBytes(new byte[0]);
+                return fileData;
+            }
+
+            if (readSize < chunkSize) {
+                // 不足1024需要拷贝去掉空字节
+                byte[] copy = new byte[readSize];
+                System.arraycopy(bytes, 0, copy, 0, readSize);
+                fileData.setBytes(copy);
+            } else {
+                fileData.setBytes(bytes);
+            }
+
+        } catch (Exception ex) {
+            fileData.setErr(ex.getMessage());
+        }
+        return fileData;
+    }
+
+    public static void writeFile(Path filePath, long readPosition, byte[] data) throws IOException {
+        RandomAccessFile randomAccessFile = new RandomAccessFile(filePath.toFile(), "rw");
         randomAccessFile.seek(readPosition);
-        byte[] bytes = new byte[SEND_FILEDATA_LENGTH];
-        int readSize = randomAccessFile.read(bytes);
-        if (readSize <= 0) {
-            randomAccessFile.close();
-            return new FileBurstData(FileStatus.COMPLETE);
-        }
-        FileBurstData fileInfo = new FileBurstData();
-        fileInfo.setFileUrl(fileUrl);
-        fileInfo.setFileName(file.getName());
-        fileInfo.setBeginPos(readPosition);
-        fileInfo.setEndPos(readPosition + readSize);
-        // 不足1024需要拷贝去掉空字节
-        if (readSize < SEND_FILEDATA_LENGTH) {
-            byte[] copy = new byte[readSize];
-            System.arraycopy(bytes, 0, copy, 0, readSize);
-            fileInfo.setBytes(copy);
-            fileInfo.setStatus(FileStatus.END);
-        } else {
-            fileInfo.setBytes(bytes);
-            fileInfo.setStatus(FileStatus.CENTER);
-        }
-        randomAccessFile.close();
-        return fileInfo;
-    }
-
-    public static FileBurstInstruct writeFile(String baseUrl, FileBurstData fileBurstData) throws IOException {
-
-        if (FileStatus.COMPLETE == fileBurstData.getStatus()) {
-            // FileStatus ｛0开始、1中间、2结尾、3完成｝
-            return new FileBurstInstruct(FileStatus.COMPLETE);
-        }
-
-        File file = new File(baseUrl + "/" + fileBurstData.getFileName());
-        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
-        randomAccessFile.seek(fileBurstData.getBeginPos());
-        randomAccessFile.write(fileBurstData.getBytes());
+        randomAccessFile.write(data);
         randomAccessFile.close();
 
-        if (FileStatus.END == fileBurstData.getStatus()) {
-            return new FileBurstInstruct(FileStatus.COMPLETE);
-        }
-
-
-        FileBurstInstruct fileBurstInstruct = new FileBurstInstruct();
-        fileBurstInstruct.setStatus(FileStatus.CENTER);
-        fileBurstInstruct.setClientFileUrl(fileBurstData.getFileUrl());
-        fileBurstInstruct.setReadPosition(fileBurstData.getEndPos());
-        return fileBurstInstruct;
     }
 
-    public static void createDir(String baseDir) {
-        File file = new File(baseDir);
+    public static void createDir(Path baseDir) {
+        File file = baseDir.toFile();
         if (!file.exists()) file.mkdirs();
     }
 

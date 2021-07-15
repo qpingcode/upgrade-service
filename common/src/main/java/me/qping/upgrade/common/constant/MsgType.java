@@ -1,6 +1,7 @@
 package me.qping.upgrade.common.constant;
 
 import me.qping.upgrade.common.message.impl.*;
+import me.qping.upgrade.common.message.impl.FileProgress;
 
 public enum MsgType {
 
@@ -11,9 +12,9 @@ public enum MsgType {
     SHELL_COMMAND((byte) 5, ShellCommand.class),                    // 执行shell请求
     SHELL_COMMAND_RESPONSE((byte) 6, ShellCommandResponse.class),   // 执行shell返回
     FORCE_OFFLINE((byte) 7, ForceOffline.class),                    // 强制客户端下线命令
-    FILE_DESC_INFO((byte) 16, FileDescInfo.class),                  // 文件传输请求
-    FILE_BURST_INSTRUCT((byte) 17, FileBurstInstruct.class),        // 文件传输指令
-    FILE_BURST_DATA((byte) 18, FileBurstData.class)                 // 文件传输数据
+    FILE_DESC_INFO((byte) 16, FileDesc.class),                  // 文件传输请求
+    FILE_BURST_INSTRUCT((byte) 17, FileProgress.class),        // 文件传输指令
+    FILE_BURST_DATA((byte) 18, FileData.class)                 // 文件传输数据
     ;
 
     byte val;

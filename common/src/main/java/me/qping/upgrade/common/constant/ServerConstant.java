@@ -30,9 +30,17 @@ public class ServerConstant {
     public static final int IdleThenPing = 5;               // 客户端判断 5s 没有交互，就发一个心跳
 
 
+
+    public static final int DEFAULT_CHUCK_SIZE = 1024 * 10; // 默认分块10K
+    public static final int MIN_CHUCK_SIZE = 1024 * 10;     // 最小分块 1K， 不能比这个小
+
+
+
     public static final int MSG_STORAGE_MSG_TIMEOUT = 60 * 1000;
     public static final int MSG_STORAGE_CLEAN_SLEEP_INTERVAL = 30 * 1000;
 
 
-
+    public static final String JdbcUrl = "jdbc:h2:file:/Users/qping/test/.h2/upgrade_server_db;AUTO_SERVER=TRUE";
+    public static final String JdbcUsername = "sa";
+    public static final String JdbcPassword = "";
 }

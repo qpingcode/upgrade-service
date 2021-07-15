@@ -7,7 +7,7 @@ import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.handler.FileTransferUtil;
-import me.qping.upgrade.common.message.impl.FileDescInfo;
+import me.qping.upgrade.common.message.impl.FileDesc;
 import me.qping.upgrade.common.message.impl.ShellCommand;
 
 import java.io.File;
@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static me.qping.upgrade.common.constant.ResponseCode.ERR_NODE_OFFLINE;
 import static me.qping.upgrade.common.constant.ResponseCode.ERR_FILE_NOT_EXISTS;
+import static me.qping.upgrade.common.constant.ServerConstant.DEFAULT_CHUCK_SIZE;
 import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
 
 /**
@@ -120,8 +121,9 @@ public class SessionUtil {
      * 下发文件到客户端
      * @param nodeId          客户端id
      * @param serverFilePath    服务器文件路径
+     * @param targetPath
      */
-    public static void transferTo(long nodeId, String serverFilePath) throws ServerException {
+    public static void transferTo(long nodeId, String serverFilePath, String targetPath) throws ServerException {
         File file = new File(serverFilePath);
 
         if(!file.exists()){
@@ -129,8 +131,16 @@ public class SessionUtil {
         }
 
 
-        FileDescInfo fileDescInfo = FileTransferUtil.buildRequestTransferFile(messageIdGen.nextId(),
-                file.getAbsolutePath(), file.getName(), "", file.length());
+        FileDesc fileDescInfo = FileDesc.of(
+                messageIdGen.nextId(),
+                file.getAbsolutePath(),
+                file.getName(),
+                file.length(),
+                targetPath,
+                SERVER_NODE_ID,
+                DEFAULT_CHUCK_SIZE,
+                nodeId
+        );
 
         Channel channel = getChannel(nodeId);
         if(channel == null){
@@ -147,20 +157,21 @@ public class SessionUtil {
      * 从客户端上传文件到服务器
      * @param nodeId          客户端id
      * @param clientFilePath    客户端文件路径
+     * @param targetPath
      */
-    public static void transferFrom(long nodeId, String clientFilePath) throws ServerException {
+    public static void transferFrom(long nodeId, String clientFilePath, String targetPath) throws ServerException {
 
         // todo 断点续传信息，实际应用中需要将断点续传信息保存到数据库中
         // todo 文件大小需传进来
-        Msg sendFileTransferProtocol = FileTransferUtil.buildTransferInstruct(messageIdGen.nextId(), FileStatus.BEGIN, clientFilePath, 0l, -1l);
+//        Msg sendFileTransferProtocol = FileTransferUtil.buildFileChunked(messageIdGen.nextId(), FileStatus.BEGIN, clientFilePath, 0l, -1l);
 
-        Channel channel = getChannel(nodeId);
-        if(channel == null){
-            throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
-        }
-
-        System.out.println("开始接收文件：" + clientFilePath);
-        channel.writeAndFlush(clientFilePath);
+//        Channel channel = getChannel(nodeId);
+//        if(channel == null){
+//            throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
+//        }
+//
+//        System.out.println("开始接收文件：" + clientFilePath);
+//        channel.writeAndFlush(clientFilePath);
 
     }
 }

@@ -29,6 +29,10 @@ public class ApiController {
     @Autowired
     UpgradeServer upgradeServer;
 
+    /**
+     * 展示客户端连接列表
+     * @return
+     */
     @RequestMapping(value = "/node/list")
     @ResponseBody
     public List<Session> nodeList(){
@@ -41,6 +45,11 @@ public class ApiController {
         return list;
     }
 
+    /**
+     * 将客户端踢下线
+     * @param nodeId
+     * @return
+     */
     @RequestMapping(value = "/node/kick")
     @ResponseBody
     public boolean kickNode(long nodeId){
@@ -52,13 +61,17 @@ public class ApiController {
         if(channel == null){
             return false;
         }
-
         System.out.println("强制下线客户端：" + nodeId);
-
         channel.writeAndFlush(cmd);
         return true;
     }
 
+    /**
+     * 在客户端上执行shell
+     * @param nodeId
+     * @param shell
+     * @return
+     */
     @RequestMapping(value = "/node/executeShell")
     @ResponseBody
     public ShellCommandResponse executeShell(long nodeId, String shell){
@@ -75,21 +88,33 @@ public class ApiController {
         }
     }
 
+    /**
+     * 服务器下发文件
+     * @param nodeId
+     * @param sourcePath    服务器文件路径
+     * @param targetPath    客户端存储路径
+     */
     @RequestMapping(value = "/node/transferTo")
     @ResponseBody
-    public void transferTo(long nodeId, String serverFilePath){
+    public void transferTo(long nodeId, String sourcePath, String targetPath){
         try {
-            SessionUtil.transferTo(nodeId, serverFilePath);
+            SessionUtil.transferTo(nodeId, sourcePath, targetPath);
         } catch (ServerException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * 服务器从客户端获取文件
+     * @param nodeId
+     * @param sourcePath    客户端文件路径
+     * @param targetPath    服务器存储路径
+     */
     @RequestMapping(value = "/node/transferFrom")
     @ResponseBody
-    public void transferFrom(long nodeId, String clientFilePath){
+    public void transferFrom(long nodeId, String sourcePath, String targetPath){
         try {
-            SessionUtil.transferFrom(nodeId, clientFilePath);
+            SessionUtil.transferFrom(nodeId, sourcePath, targetPath);
         } catch (Exception e) {
             e.printStackTrace();
         }
