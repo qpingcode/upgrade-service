@@ -3,6 +3,7 @@ package me.qping.upgrade.server.controller;
 import io.netty.channel.Channel;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.MsgStorage;
+import me.qping.upgrade.common.message.impl.FileAskResponse;
 import me.qping.upgrade.common.message.impl.ForceOffline;
 import me.qping.upgrade.common.message.impl.ShellCommandResponse;
 import me.qping.upgrade.common.session.Session;
@@ -98,7 +99,7 @@ public class ApiController {
     @ResponseBody
     public void transferTo(long nodeId, String sourcePath, String targetPath){
         try {
-            SessionUtil.transferTo(nodeId, sourcePath, targetPath);
+            SessionUtil.transferTo(nodeId, sourcePath, targetPath, true);
         } catch (ServerException e) {
             e.printStackTrace();
         }
@@ -114,7 +115,17 @@ public class ApiController {
     @ResponseBody
     public void transferFrom(long nodeId, String sourcePath, String targetPath){
         try {
-            SessionUtil.transferFrom(nodeId, sourcePath, targetPath);
+
+            long messageId = SessionUtil.askFile(nodeId, sourcePath);
+
+            FileAskResponse result = MsgStorage.get(messageId, 10 * 1000);
+            if(result == null){
+                System.err.println("无法查看的客户端的文件信息,客户端id： " + nodeId + " 文件：" +sourcePath);
+                return;
+            }
+
+            SessionUtil.transferFrom(nodeId, result.getFileUrl(), result.getFileSize(), targetPath, true);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -54,6 +54,7 @@ public class UpgradeServer {
                             ch.pipeline().addLast(new ShellCommandResponseHandler());
                             ch.pipeline().addLast(new FileDescHandler("/Users/qping/Desktop/data/server"));
                             ch.pipeline().addLast(new FileProgressHandler("/Users/qping/Desktop/data/server"));
+                            ch.pipeline().addLast(new FileAskResponseHandler());
                         }
                     });
 

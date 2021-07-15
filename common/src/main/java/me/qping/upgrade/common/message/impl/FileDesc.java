@@ -4,7 +4,8 @@ import lombok.Data;
 import me.qping.upgrade.common.message.Msg;
 
 /**
- * 文件描述信息
+ * 上传文件请求
+ * 包含文件的基本信息
  *
  * @author admin
  */
@@ -21,7 +22,7 @@ public class FileDesc extends Msg {
     private boolean breakPointResume;    // 断点续传
 
 
-    public static FileDesc of(long messageId, String fileUrl, String fileName, Long fileSize, String targetPath, long nodeId, int chunkSize, long toNodeId) {
+    public static FileDesc of(long messageId, String fileUrl, String fileName, Long fileSize, String targetPath, long nodeId, int chunkSize) {
         FileDesc desc = new FileDesc();
         desc.setMessageId(messageId);
         desc.setSourceUrl(fileUrl);

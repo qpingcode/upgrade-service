@@ -16,10 +16,10 @@ import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
 import me.qping.upgrade.common.message.codec.Serialization;
+import me.qping.upgrade.common.message.handler.FileAskHandler;
 import me.qping.upgrade.common.message.handler.FileDescHandler;
 import me.qping.upgrade.common.message.handler.FileProgressHandler;
 import me.qping.upgrade.common.message.handler.ShellCommandHandler;
-import me.qping.upgrade.common.message.impl.FileProgressListener;
 import me.qping.upgrade.common.message.progress.ProgressStorage;
 import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
@@ -147,6 +147,7 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this));
                         ch.pipeline().addLast(new FileDescHandler(installDir));
                         ch.pipeline().addLast(new FileProgressHandler(installDir));
+                        ch.pipeline().addLast(new FileAskHandler(installDir));
                     }
 
                 });

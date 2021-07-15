@@ -23,6 +23,8 @@ public interface ResponseCode {
     int ERR_REG_REPEAT = -102;           // 重复注册
     int ERR_NODE_ID_ILLEGAL = -103;      // nodeId 非法
     int ERR_NODE_OFFLINE = -104;         // 客户端下线
+    int ERR_PROGRESS_INSERT = -105;      // 保存进度到数据库失败
+    int ERR_PROGRESS_QUERY = -106;
 
     // 客户端异常
     int ERR_COMMAND_ERROR = -205;
