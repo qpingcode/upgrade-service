@@ -17,7 +17,6 @@ import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
 import me.qping.upgrade.common.message.codec.Serialization;
 import me.qping.upgrade.common.message.handler.FileAskHandler;
-import me.qping.upgrade.common.message.handler.FileDescHandler;
 import me.qping.upgrade.common.message.handler.FileProgressHandler;
 import me.qping.upgrade.common.message.handler.ShellCommandHandler;
 import me.qping.upgrade.common.message.progress.ProgressStorage;
@@ -146,8 +145,7 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast(new ObjEncoder());
                         ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + nodeId, UpgradeClient.this));
                         ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this));
-                        ch.pipeline().addLast(new FileDescHandler(installDir));
-                        ch.pipeline().addLast(new FileProgressHandler(installDir, Paths.get(installDir, "temp").toString()));
+                        ch.pipeline().addLast(new FileProgressHandler(installDir, Paths.get(installDir, "temp").toString(), nodeId));
                         ch.pipeline().addLast(new FileAskHandler(installDir));
                     }
 

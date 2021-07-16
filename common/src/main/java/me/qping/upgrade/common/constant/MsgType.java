@@ -14,7 +14,6 @@ public enum MsgType {
     FORCE_OFFLINE((byte) 7, ForceOffline.class),                    // 强制客户端下线命令
 
 
-    FILE_DESC((byte) 16, FileDesc.class),                           // 文件上传请求
     FILE_PROGRESS((byte) 17, FileProgress.class),                   // 文件传输指令
     FILE_ASK((byte)18, FileAsk.class),
     FILE_ASK_RESPONSE((byte)19, FileAskResponse.class)

@@ -18,7 +18,7 @@ public class ServerConstant {
     public static final Charset MSG_PROTOCAL_CHARSET = Charset.forName("utf8");                 // 协议定义消息字符集
     public static final int MSG_PROTOCAL_ID_LENGTH = ByteBufUtil.utf8Bytes(MSG_PROTOCAL_ID);    // 协议定义消息开头长度
 
-    public static final int SERVER_NODE_ID = 0;             // server 的 workId， 用于生成消息id
+    public static final long SERVER_NODE_ID = 0;             // server 的 workId， 用于生成消息id
 
     public static final String Host = "127.0.0.1";
     public static final int Port = 52000;

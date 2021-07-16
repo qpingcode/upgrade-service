@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
+import java.sql.SQLException;
+
 import static me.qping.upgrade.common.constant.ServerConstant.*;
 
 
@@ -52,8 +54,7 @@ public class UpgradeServer {
                             ch.pipeline().addLast(new ServerOnlineHandler("中心端"));
                             ch.pipeline().addLast(new SecurityHandler());
                             ch.pipeline().addLast(new ShellCommandResponseHandler());
-                            ch.pipeline().addLast(new FileDescHandler("/Users/qping/Desktop/data/server"));
-                            ch.pipeline().addLast(new FileProgressHandler("/Users/qping/Desktop/data/server", "/Users/qping/Desktop/data/server/.temp"));
+                            ch.pipeline().addLast(new FileProgressHandler("/Users/qping/Desktop/data/server", "/Users/qping/Desktop/data/server/.temp", SERVER_NODE_ID));
                             ch.pipeline().addLast(new FileAskResponseHandler());
                         }
                     });
@@ -87,20 +88,32 @@ public class UpgradeServer {
         ProgressStorage storage = ProgressStorage.getInstance();
         FileProgressHandler.addListener(new FileProgressListener() {
             @Override
-            public void end(int progressId, long fileNodeId, String sourcePath) {
+            public void end(int progressId, long fileNodeId, String sourcePath, long position) {
                 System.out.println(String.format("文件传输成功，源路径：%s 源节点：%s", sourcePath, fileNodeId));
-                storage.tagEnd(progressId);
+                try {
+                    storage.tagEnd(progressId, position);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
             public void progress(int progressId, long fileNodeId, String sourcePath, long totalSize, long position) {
-                storage.tagProgress(progressId, totalSize, position);
+                try {
+                    storage.tagProgress(progressId, totalSize, position);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
             public void error(int progressId, long fileNodeId, String sourcePath, String errorMsg) {
                 System.err.println(String.format("文件传输出错啦，源路径：%s 源节点：%s 错误信息：%s", sourcePath, fileNodeId, errorMsg));
-                storage.tagError(progressId, errorMsg);
+                try {
+                    storage.tagError(progressId, errorMsg);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         });
 

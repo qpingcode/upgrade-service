@@ -9,7 +9,7 @@ package me.qping.upgrade.common.message.impl;
  **/
 public interface FileProgressListener {
 
-    public void end(int progressId, long fileNodeId, String sourcePath);
+    public void end(int progressId, long fileNodeId, String sourcePath, long readPosition);
 
     public void progress(int progressId, long fileNodeId, String sourcePath, long totalSize, long readPosition);
 

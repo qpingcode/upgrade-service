@@ -8,6 +8,8 @@ import me.qping.upgrade.common.message.impl.FileAskResponse;
 import me.qping.upgrade.common.message.impl.FileBean;
 import me.qping.upgrade.common.message.impl.ForceOffline;
 import me.qping.upgrade.common.message.impl.ShellCommandResponse;
+import me.qping.upgrade.common.message.progress.FileProgressBean;
+import me.qping.upgrade.common.message.progress.ProgressStorage;
 import me.qping.upgrade.common.session.Session;
 import me.qping.upgrade.common.session.SessionUtil;
 import me.qping.upgrade.server.netty.UpgradeServer;
@@ -136,7 +138,6 @@ public class ApiController {
             Assert.notBlank(targetPath);
             Assert.isTrue(nodeId >= 0);
 
-            // 暂时关闭断点续传 todo
             SessionUtil.transferTo(nodeId, sourcePath, targetPath, false);
         } catch (ServerException e) {
             e.printStackTrace();
@@ -178,12 +179,46 @@ public class ApiController {
             }
 
             FileBean f = result.getFileBeans().get(0);
-            // 暂时关闭断点续传 todo
             SessionUtil.transferFrom(nodeId, f.getFilePath(), f.getFileSize(), f.getFileName(), targetPath, false);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+    /**
+     * 传输文件列表
+     */
+    @RequestMapping(value = "/transfer/list")
+    @ResponseBody
+    public List<FileProgressBean> transferList(){
+        try {
+
+            ProgressStorage storage = ProgressStorage.getInstance();
+            List<FileProgressBean> beans = storage.findAll();
+            return beans;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    /**
+     * 传输文件列表
+     */
+    @RequestMapping(value = "/transfer/findById")
+    @ResponseBody
+    public FileProgressBean transferFindById(Integer id){
+        try {
+            ProgressStorage storage = ProgressStorage.getInstance();
+            FileProgressBean bean = storage.findById(id);
+            return bean;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

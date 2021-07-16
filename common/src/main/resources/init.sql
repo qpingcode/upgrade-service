@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS FILE_PROGRESS;
 
 CREATE TABLE FILE_PROGRESS (
   id INT IDENTITY PRIMARY KEY,
+  message_id BIGINT,
   node_id BIGINT,
   to_node_id BIGINT,
   file_name varchar(1000),

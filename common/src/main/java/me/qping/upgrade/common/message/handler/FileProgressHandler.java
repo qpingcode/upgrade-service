@@ -1,6 +1,7 @@
 package me.qping.upgrade.common.message.handler;
 
-import io.netty.channel.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import me.qping.upgrade.common.constant.FileOperFlag;
 import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.impl.FileData;
@@ -15,6 +16,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
+
 /**
  * @ClassName NettyClient
  * @Description shell命令处理器
@@ -26,11 +29,14 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
 
     String basePath;
     String tempPath;
+    long currentNodeId;
+
     static List<FileProgressListener> listeners = new CopyOnWriteArrayList<>();
 
-    public FileProgressHandler(String basePath, String tempPath) {
+    public FileProgressHandler(String basePath, String tempPath, long nodeId) {
         this.basePath = basePath;
         this.tempPath = tempPath;
+        this.currentNodeId = nodeId;
     }
 
     public static void addListener(FileProgressListener listener){
@@ -41,10 +47,15 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
     protected void channelRead0(ChannelHandlerContext ctx, FileProgress progress) {
         System.out.println(progress);
         if(progress.getFlag() == FileOperFlag.READ){
-            readData(ctx, progress);
+            progress = readData(progress);
         }else if(progress.getFlag() == FileOperFlag.WRITE){
-            writeDate(ctx, progress);
+            progress = writeDate(progress);
         }
+
+        if(progress != null){
+            ctx.writeAndFlush(progress);
+        }
+
     }
 
     public Path getUploadTempPath(){
@@ -59,15 +70,14 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
     /**
      * 接收数据，并返回进度
      * 每次处理 FileProgress.readData 后
-     * @param ctx
      * @param progress
      */
-    private void writeDate(ChannelHandlerContext ctx, FileProgress progress) {
+    public FileProgress writeDate(FileProgress progress) {
         if(progress.getStatus() == FileStatus.ERROR){
             listeners.forEach(listener -> {
                 listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
             });
-            return;
+            return null;
         }
 
         try {
@@ -104,7 +114,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
                 Files.move(uploadTempFilePath, uploadPath.getParent().resolve(uploadPath.getFileName()), StandardCopyOption.ATOMIC_MOVE);
 
                 listeners.forEach(listener -> {
-                    listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath());
+                    listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getReadPosition() + readBytes);
                 });
 
 
@@ -131,34 +141,36 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             progress.setErrMsg(e.getMessage());
         }
 
-        ctx.writeAndFlush(progress);
+        if(currentNodeId == SERVER_NODE_ID && (progress.getStatus() == FileStatus.ERROR || progress.getStatus() == FileStatus.END)){
+            // 服务器
+            return null;
+        }
+
+        return progress;
     }
 
     /**
      * 读取数据上传
      * readData 发起，可能的调用方
-     *          1、服务器下发文件给客户端，首先发送 FileDesc 给客户端， 客户端收到后发送 FileProgress, 服务器接收后readData
-     *          2、服务器要求客户端上传文件时，发了一个 FileProgress 给客户端, 客户端接收后readData
-     *          3、每次处理 FileProgress.writeDate 后 readData
-     *
-     * @param ctx
+     *          1、服务器要求客户端上传文件时，发了一个 FileProgress 给客户端, 客户端接收后readData
+     *          2、每次处理 FileProgress.writeDate 后 readData
      * @param progress
      */
-    private void readData(ChannelHandlerContext ctx, FileProgress progress) {
+    public static FileProgress readData(FileProgress progress) {
 
         if(FileStatus.ERROR == progress.getStatus()){
-            // 这里的错误可能来自 FileDescHandler 或者 FileProgressHandler.writeDate 方法
+            // 这里的错误来自 FileProgressHandler.writeDate 方法
             listeners.forEach(listener -> {
                 listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
             });
-            return;
+            return null;
         }
 
         if (FileStatus.END == progress.getStatus()) {
             listeners.forEach(listener -> {
-                listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath());
+                listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getReadPosition());
             });
-            return;
+            return null;
         }
 
         // 读的一端能记录进度
@@ -185,6 +197,12 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
                 listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
             });
 
+        } else if(readBytes == 0){
+            if(currentNodeId == SERVER_NODE_ID && (progress.getStatus() == FileStatus.ERROR || progress.getStatus() == FileStatus.END)){
+                // 服务器
+                return null;
+            }
+
         } else if(readBytes < progress.getChunkSize()){
             progress.setStatus(FileStatus.END);
 
@@ -193,7 +211,9 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             progress.setStatus(FileStatus.CENTER);
         }
 
-        ctx.writeAndFlush(progress);
+
+
+        return progress;
     }
 
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {

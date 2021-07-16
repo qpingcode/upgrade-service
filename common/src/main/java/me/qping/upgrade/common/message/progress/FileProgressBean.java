@@ -23,6 +23,9 @@ public class FileProgressBean extends Msg {
     @DataBaseColumn("id")
     protected long id = -1;
 
+    @DataBaseColumn("message_id")
+    protected long messageId;
+
     @DataBaseColumn("node_id")
     protected long nodeId;          // 文件来源节点id️
 

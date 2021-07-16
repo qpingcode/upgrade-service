@@ -7,10 +7,9 @@ import me.qping.upgrade.common.constant.ResponseCode;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.SnowFlakeId;
-import me.qping.upgrade.common.message.impl.FileAsk;
-import me.qping.upgrade.common.message.impl.FileDesc;
-import me.qping.upgrade.common.message.impl.FileProgress;
-import me.qping.upgrade.common.message.impl.ShellCommand;
+import me.qping.upgrade.common.message.handler.FileProgressHandler;
+import me.qping.upgrade.common.message.handler.FileTransferUtil;
+import me.qping.upgrade.common.message.impl.*;
 import me.qping.upgrade.common.message.progress.ProgressStorage;
 
 import java.io.File;
@@ -154,19 +153,42 @@ public class SessionUtil {
             throw new ServerException(ERR_FILE_NOT_EXISTS, "文件不存在：" + serverFilePath);
         }
 
-
-        FileDesc fileDescInfo = FileDesc.of(
-                messageIdGen.nextId(),
-                file.getAbsolutePath(),
-                file.getName(),
-                file.length(),
-                targetPath,
-                SERVER_NODE_ID,
-                DEFAULT_CHUCK_SIZE
-        );
+        ProgressStorage storage = ProgressStorage.getInstance();
+        FileProgress progress = null;
+        long messageId = messageIdGen.nextId();
 
         if(breakPointResume){
-            fileDescInfo.setBreakPointResume(breakPointResume);
+            try {
+                progress = storage.findByNodeIdAndFilePathAndFileName(SERVER_NODE_ID, file.getAbsolutePath(), file.getName());
+                if (null != progress) {
+                    progress.clearDataAndPrepareToRead();
+                    progress.setMessageId(messageId);
+                    progress.setChunkSize(DEFAULT_CHUCK_SIZE);
+                }
+            } catch (Exception e) {
+                throw new ServerException(ResponseCode.ERR_PROGRESS_QUERY, e.getMessage());
+            }
+        }
+
+        if(progress == null){
+            progress = new FileProgress();
+            progress.setMessageId(messageId);
+            progress.setNodeId(SERVER_NODE_ID);
+            progress.setSourcePath(file.getAbsolutePath());
+            progress.setTotalSize(file.length());
+            progress.setFileName(file.getName());
+            progress.setTargetPath(targetPath);
+            progress.setChunkSize(DEFAULT_CHUCK_SIZE);
+            progress.setReadPosition(0);
+            progress.setStatus(FileStatus.CENTER);
+
+            progress.clearDataAndPrepareToRead();
+
+            try {
+                storage.insert(progress, nodeId);
+            } catch (SQLException e) {
+                throw new ServerException(ResponseCode.ERR_PROGRESS_INSERT, e.getMessage());
+            }
         }
 
         Channel channel = getChannel(nodeId);
@@ -174,9 +196,9 @@ public class SessionUtil {
             throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
         }
 
-        System.out.println("开发下发文件：" + serverFilePath + "，到客户端：" + nodeId );
-
-        channel.writeAndFlush(fileDescInfo);
+        FileProgress writeProgress = FileProgressHandler.readData(progress);
+        channel.writeAndFlush(writeProgress);
+        System.out.println("开始下发文件：" + serverFilePath + "，到客户端：" + nodeId );
     }
 
 
@@ -184,8 +206,9 @@ public class SessionUtil {
      * 从客户端上传文件到服务器
      * @param nodeId          客户端id
      * @param clientFileSize  客户端大小字节数
-     * @param clientFilePath  客户端文件路径
-     * @param targetPath
+     * @param clientFilePath  客户端文件路径（必须到文件名）
+     * @param targetPath      服务器存储路径（必须到文件名）
+     * @param breakPointResume  是否断点续传
      */
     public static void transferFrom(long nodeId, String clientFilePath, long clientFileSize, String clientFileName, String targetPath, boolean breakPointResume) throws ServerException {
 
@@ -222,7 +245,7 @@ public class SessionUtil {
             progress.clearDataAndPrepareToRead();
 
             try {
-                storage.insert(progress);
+                storage.insert(progress, SERVER_NODE_ID);
             } catch (SQLException e) {
                 throw new ServerException(ResponseCode.ERR_PROGRESS_INSERT, e.getMessage());
             }

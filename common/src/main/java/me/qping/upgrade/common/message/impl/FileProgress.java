@@ -6,6 +6,7 @@ import me.qping.upgrade.common.constant.FileOperFlag;
 import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.Msg;
 
+import java.beans.Transient;
 import java.util.Arrays;
 
 /**
@@ -30,26 +31,6 @@ public class FileProgress extends Msg {
 
     private String errMsg;     // 错误信息
     private byte[]	bytes;		// 文件字节；再实际应用中可以使用非对称加密，以保证传输信息安全
-
-    public static FileProgress of(FileDesc fileDesc) {
-        FileProgress progress = new FileProgress();
-        progress.setMessageId(fileDesc.getMessageId());
-
-        progress.setNodeId(fileDesc.getNodeId());
-
-        progress.setSourcePath(fileDesc.getSourcePath());
-        progress.setTotalSize(fileDesc.getFileSize());
-        progress.setFileName(fileDesc.getFileName());
-
-        progress.setTargetPath(fileDesc.getTargetPath());
-        progress.setChunkSize(fileDesc.getChunkSize());
-        progress.setReadPosition(0);
-        progress.setStatus(FileStatus.CENTER);
-
-        progress.clearDataAndPrepareToRead();
-
-        return progress;
-    }
 
 
     public void clearDataAndPrepareToRead(){
