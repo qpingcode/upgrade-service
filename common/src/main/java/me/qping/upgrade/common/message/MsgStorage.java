@@ -50,8 +50,8 @@ public class MsgStorage{
 
         try {
 
-            if(timeoutMillis > MSG_STORAGE_MSG_TIMEOUT){
-                timeoutMillis = MSG_STORAGE_MSG_TIMEOUT;
+            if(timeoutMillis < 0){
+                timeoutMillis = 0;
             }
 
             if(timedCache.get(messageId) == null){

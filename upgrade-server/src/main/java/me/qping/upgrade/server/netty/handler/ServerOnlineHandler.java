@@ -45,9 +45,7 @@ public class ServerOnlineHandler extends OnlineInboundMiddleware {
 
     public void handlerRegister(ChannelHandlerContext ctx, RegisterForm msg) {
 
-        RegisterResponse response = new RegisterResponse();
-        response.setMessageId(msg.getMessageId());
-
+        RegisterResponse response = new RegisterResponse(msg.getMessageId());
         try{
 
             Channel channel = ctx.channel();

@@ -14,4 +14,8 @@ import me.qping.upgrade.common.message.Msg;
 public class RegisterResponse extends Msg {
     long code;
     String message;
+
+    public RegisterResponse(long messageId) {
+        this.messageId = messageId;
+    }
 }

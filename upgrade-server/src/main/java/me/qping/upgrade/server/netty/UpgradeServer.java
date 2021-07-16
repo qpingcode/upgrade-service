@@ -53,7 +53,7 @@ public class UpgradeServer {
                             ch.pipeline().addLast(new SecurityHandler());
                             ch.pipeline().addLast(new ShellCommandResponseHandler());
                             ch.pipeline().addLast(new FileDescHandler("/Users/qping/Desktop/data/server"));
-                            ch.pipeline().addLast(new FileProgressHandler("/Users/qping/Desktop/data/server"));
+                            ch.pipeline().addLast(new FileProgressHandler("/Users/qping/Desktop/data/server", "/Users/qping/Desktop/data/server/.temp"));
                             ch.pipeline().addLast(new FileAskResponseHandler());
                         }
                     });
@@ -87,19 +87,19 @@ public class UpgradeServer {
         ProgressStorage storage = ProgressStorage.getInstance();
         FileProgressHandler.addListener(new FileProgressListener() {
             @Override
-            public void end(int progressId, long fileNodeId, String sourceUrl) {
-                System.out.println(String.format("文件传输成功，源路径：%s 源节点：%s", sourceUrl, fileNodeId));
+            public void end(int progressId, long fileNodeId, String sourcePath) {
+                System.out.println(String.format("文件传输成功，源路径：%s 源节点：%s", sourcePath, fileNodeId));
                 storage.tagEnd(progressId);
             }
 
             @Override
-            public void progress(int progressId, long fileNodeId, String sourceUrl, long totalSize, long position) {
+            public void progress(int progressId, long fileNodeId, String sourcePath, long totalSize, long position) {
                 storage.tagProgress(progressId, totalSize, position);
             }
 
             @Override
-            public void error(int progressId, long fileNodeId, String sourceUrl, String errorMsg) {
-                System.err.println(String.format("文件传输出错啦，源路径：%s 源节点：%s 错误信息：%s", sourceUrl, fileNodeId, errorMsg));
+            public void error(int progressId, long fileNodeId, String sourcePath, String errorMsg) {
+                System.err.println(String.format("文件传输出错啦，源路径：%s 源节点：%s 错误信息：%s", sourcePath, fileNodeId, errorMsg));
                 storage.tagError(progressId, errorMsg);
             }
         });

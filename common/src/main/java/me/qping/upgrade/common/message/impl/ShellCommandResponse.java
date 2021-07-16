@@ -14,4 +14,8 @@ import me.qping.upgrade.common.message.Msg;
 public class ShellCommandResponse extends Msg {
     long code;
     String message;
+
+    public ShellCommandResponse(long messageId) {
+        this.messageId = messageId;
+    }
 }

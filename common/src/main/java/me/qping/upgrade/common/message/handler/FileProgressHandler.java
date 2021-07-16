@@ -25,10 +25,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgress> {
 
     String basePath;
+    String tempPath;
     static List<FileProgressListener> listeners = new CopyOnWriteArrayList<>();
 
-    public FileProgressHandler(String basePath) {
+    public FileProgressHandler(String basePath, String tempPath) {
         this.basePath = basePath;
+        this.tempPath = tempPath;
     }
 
     public static void addListener(FileProgressListener listener){
@@ -36,42 +38,43 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FileProgress fileProgress) {
-
-        if(fileProgress.getFlag() == FileOperFlag.READ){
-            readData(ctx, fileProgress);
-        }else if(fileProgress.getFlag() == FileOperFlag.WRITE){
-            writeDate(ctx, fileProgress);
+    protected void channelRead0(ChannelHandlerContext ctx, FileProgress progress) {
+        System.out.println(progress);
+        if(progress.getFlag() == FileOperFlag.READ){
+            readData(ctx, progress);
+        }else if(progress.getFlag() == FileOperFlag.WRITE){
+            writeDate(ctx, progress);
         }
     }
 
-    public Path getUploadTempPath(String targetPath){
-        return Paths.get(basePath, targetPath, "temp");
+    public Path getUploadTempPath(){
+        return Paths.get(tempPath);
     }
 
     public Path getUploadPath(String targetPath){
-        return Paths.get(basePath, targetPath);
+        return Paths.get(basePath).resolve(targetPath);
     }
 
 
     /**
      * 接收数据，并返回进度
      * 每次处理 FileProgress.readData 后
-     *
      * @param ctx
      * @param progress
      */
     private void writeDate(ChannelHandlerContext ctx, FileProgress progress) {
-
         if(progress.getStatus() == FileStatus.ERROR){
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourceUrl(), progress.getErrMsg());
+                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
             });
             return;
         }
 
-        Path uploadTempPath = getUploadTempPath(progress.getTargetUrl());
         try {
+
+            String fileName = progress.getFileName();
+            Path uploadTempPath = getUploadTempPath();
+            Path uploadTempFilePath = uploadTempPath.resolve(fileName);
 
             long readPosition = progress.getReadPosition();
             int readBytes = progress.getBytes() == null ? 0 : progress.getBytes().length;
@@ -83,20 +86,25 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
 
             // 写入数据
             if(readBytes > 0){
-                FileTransferUtil.writeFile(uploadTempPath, readPosition, progress.getBytes());
+                FileTransferUtil.writeFile(uploadTempFilePath, readPosition, progress.getBytes());
                 listeners.forEach(listener -> {
-                    listener.progress(progress.getId(), progress.getNodeId(), progress.getSourceUrl(), progress.getTotalSize(), progress.getReadPosition() + readBytes);
+                    listener.progress(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getTotalSize(), progress.getReadPosition() + readBytes);
                 });
 
             }
 
             // 没有更多数据啦
             if(progress.getStatus() == FileStatus.END){
-                Path uploadPath = getUploadPath(progress.getTargetUrl());
-                Files.move(uploadTempPath, uploadPath, StandardCopyOption.REPLACE_EXISTING);
+                Path uploadPath = getUploadPath(progress.getTargetPath());
+
+                if(!uploadPath.getParent().toFile().exists()){
+                    uploadPath.getParent().toFile().mkdirs();
+                }
+
+                Files.move(uploadTempFilePath, uploadPath.getParent().resolve(uploadPath.getFileName()), StandardCopyOption.ATOMIC_MOVE);
 
                 listeners.forEach(listener -> {
-                    listener.end(progress.getId(), progress.getNodeId(), progress.getSourceUrl());
+                    listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath());
                 });
 
 
@@ -111,9 +119,8 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             progress.clearDataAndPrepareToRead();
 
         } catch (Exception e) {
-
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourceUrl(), "写入错误：" + e.getMessage());
+                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), "写入错误：" + e.getMessage());
             });
 
 
@@ -142,26 +149,26 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
         if(FileStatus.ERROR == progress.getStatus()){
             // 这里的错误可能来自 FileDescHandler 或者 FileProgressHandler.writeDate 方法
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourceUrl(), progress.getErrMsg());
+                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
             });
             return;
         }
 
         if (FileStatus.END == progress.getStatus()) {
             listeners.forEach(listener -> {
-                listener.end(progress.getId(), progress.getNodeId(), progress.getSourceUrl());
+                listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath());
             });
             return;
         }
 
         // 读的一端能记录进度
         listeners.forEach(listener -> {
-            listener.progress(progress.getId(), progress.getNodeId(), progress.getSourceUrl(), progress.getTotalSize(), progress.getReadPosition());
+            listener.progress(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getTotalSize(), progress.getReadPosition());
         });
 
         FileData fileData = FileTransferUtil.readFile(
                 progress.getTotalSize(),
-                progress.getSourceUrl(),
+                progress.getSourcePath(),
                 progress.getReadPosition(),
                 progress.getChunkSize()
         );
@@ -175,7 +182,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             progress.setErrMsg("读取错误：" + fileData.getErr());
 
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourceUrl(), progress.getErrMsg());
+                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
             });
 
         } else if(readBytes < progress.getChunkSize()){
@@ -191,6 +198,21 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
 
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         System.err.println(cause.getMessage());
+    }
+
+    public static void main(String[] args) throws IOException {
+
+        String uploadPathStr = "/Users/qping/Desktop/data/server2/jrebel2/";
+        Path uploadPath = Paths.get(uploadPathStr);
+
+
+        System.out.println(uploadPath.getFileName());
+        System.out.println(uploadPath.getParent());
+        System.out.println(uploadPath.getParent().resolve(uploadPath.getFileName()));
+
+
+        Files.move(Paths.get("/Users/qping/Desktop/data/server/temp/1.txt"), Paths.get("/Users/qping/Desktop/data/server/to/jrebel.log"), StandardCopyOption.REPLACE_EXISTING);
+
     }
 
 }

@@ -31,7 +31,7 @@ public class ServerConstant {
 
 
 
-    public static final int DEFAULT_CHUCK_SIZE = 1024 * 10; // 默认分块10K
+    public static final int DEFAULT_CHUCK_SIZE = 1024 * 100; // 默认分块100K
     public static final int MIN_CHUCK_SIZE = 1024 * 10;     // 最小分块 1K， 不能比这个小
 
 

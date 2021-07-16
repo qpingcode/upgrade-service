@@ -24,23 +24,27 @@ public class FileAskHandler extends SimpleChannelInboundHandler<FileAsk> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FileAsk fileAsk){
-
-        System.out.println("接收到服务器端询问文件：" + fileAsk.getFileUrl());
-
-        File file = new File(fileAsk.getFileUrl());
-
-        FileAskResponse fileAskResponse = new FileAskResponse();
-
+        System.out.println("接收到服务器端询问文件：" + fileAsk.getFilePath());
+        File file = new File(fileAsk.getFilePath());
+        FileAskResponse fileAskResponse = new FileAskResponse(fileAsk.getMessageId());
         if(!file.exists()){
             fileAskResponse.setExists(false);
         }else{
             fileAskResponse.setExists(true);
-            fileAskResponse.setFileUrl(file.getAbsolutePath());
-            fileAskResponse.setFileSize(file.length());
-            fileAskResponse.setFileName(file.getName());
+
+            if(file.isDirectory()){
+                fileAskResponse.setDir(true);
+                if (null != file.listFiles()) {
+                    for (File subFile : file.listFiles()) {
+                        fileAskResponse.addFile(subFile.getAbsolutePath(), subFile.length(), subFile.getName());
+                    }
+                }
+            }else{
+                fileAskResponse.setDir(false);
+                fileAskResponse.addFile(file.getAbsolutePath(), file.length(), file.getName());
+            }
         }
         ctx.writeAndFlush(fileAskResponse);
-
     }
 
 }

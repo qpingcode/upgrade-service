@@ -1,9 +1,11 @@
 package me.qping.upgrade.server.controller;
 
+import cn.hutool.core.lang.Assert;
 import io.netty.channel.Channel;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.impl.FileAskResponse;
+import me.qping.upgrade.common.message.impl.FileBean;
 import me.qping.upgrade.common.message.impl.ForceOffline;
 import me.qping.upgrade.common.message.impl.ShellCommandResponse;
 import me.qping.upgrade.common.session.Session;
@@ -54,6 +56,9 @@ public class ApiController {
     @RequestMapping(value = "/node/kick")
     @ResponseBody
     public boolean kickNode(long nodeId){
+
+        Assert.isTrue(nodeId >= 0);
+
         Channel channel = SessionUtil.getChannel(nodeId);
 
         ForceOffline cmd = new ForceOffline();
@@ -78,6 +83,9 @@ public class ApiController {
     public ShellCommandResponse executeShell(long nodeId, String shell){
         try {
 
+            Assert.notBlank(shell);
+            Assert.isTrue(nodeId >= 0);
+
             long messageId = SessionUtil.executeShell(nodeId, shell);
 
             ShellCommandResponse result = MsgStorage.get(messageId, 10 * 1000);
@@ -87,6 +95,30 @@ public class ApiController {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @RequestMapping(value = "/node/askFile")
+    @ResponseBody
+    public FileAskResponse askFile(long nodeId, String sourcePath){
+        try {
+
+            Assert.notBlank(sourcePath);
+            Assert.isTrue(nodeId >= 0);
+
+            long messageId = SessionUtil.askFile(nodeId, sourcePath);
+
+            FileAskResponse result = MsgStorage.get(messageId, 10 * 1000);
+            if(result == null){
+                System.err.println("客户端的文件查看超时, 客户端id： " + nodeId + " 文件：" + sourcePath);
+                return result;
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -99,11 +131,18 @@ public class ApiController {
     @ResponseBody
     public void transferTo(long nodeId, String sourcePath, String targetPath){
         try {
-            SessionUtil.transferTo(nodeId, sourcePath, targetPath, true);
+
+            Assert.notBlank(sourcePath);
+            Assert.notBlank(targetPath);
+            Assert.isTrue(nodeId >= 0);
+
+            // 暂时关闭断点续传 todo
+            SessionUtil.transferTo(nodeId, sourcePath, targetPath, false);
         } catch (ServerException e) {
             e.printStackTrace();
         }
     }
+
 
     /**
      * 服务器从客户端获取文件
@@ -116,15 +155,31 @@ public class ApiController {
     public void transferFrom(long nodeId, String sourcePath, String targetPath){
         try {
 
+            Assert.notBlank(sourcePath);
+            Assert.notBlank(targetPath);
+            Assert.isTrue(nodeId >= 0);
+
             long messageId = SessionUtil.askFile(nodeId, sourcePath);
 
             FileAskResponse result = MsgStorage.get(messageId, 10 * 1000);
             if(result == null){
-                System.err.println("无法查看的客户端的文件信息,客户端id： " + nodeId + " 文件：" +sourcePath);
+                System.err.println("客户端的文件查看超时, 客户端id： " + nodeId + " 文件：" +sourcePath);
                 return;
             }
 
-            SessionUtil.transferFrom(nodeId, result.getFileUrl(), result.getFileSize(), targetPath, true);
+            if(result.isDir()){
+                System.err.println("无法复制目录, 客户端id： " + nodeId + " 文件：" +sourcePath);
+                return;
+            }
+
+            if(!result.isExists()){
+                System.err.println("客户端的文件不存在, 客户端id： " + nodeId + " 文件：" +sourcePath);
+                return;
+            }
+
+            FileBean f = result.getFileBeans().get(0);
+            // 暂时关闭断点续传 todo
+            SessionUtil.transferFrom(nodeId, f.getFilePath(), f.getFileSize(), f.getFileName(), targetPath, false);
 
         } catch (Exception e) {
             e.printStackTrace();

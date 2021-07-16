@@ -1,14 +1,12 @@
 package me.qping.upgrade.common.message.handler;
 
 import me.qping.upgrade.common.message.impl.FileData;
-import me.qping.upgrade.common.message.impl.FileDesc;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
 
-import static me.qping.upgrade.common.constant.ServerConstant.DEFAULT_CHUCK_SIZE;
 import static me.qping.upgrade.common.constant.ServerConstant.MIN_CHUCK_SIZE;
 
 /**
@@ -20,8 +18,8 @@ import static me.qping.upgrade.common.constant.ServerConstant.MIN_CHUCK_SIZE;
  **/
 public class FileTransferUtil {
 
-    public static FileData readFile(long totalSize, String fileUrl, Long readPosition, int chunkSize){
-        File file = new File(fileUrl);
+    public static FileData readFile(long totalSize, String filePath, Long readPosition, int chunkSize){
+        File file = new File(filePath);
         FileData fileData = new FileData();
 
         // 不能分的太小

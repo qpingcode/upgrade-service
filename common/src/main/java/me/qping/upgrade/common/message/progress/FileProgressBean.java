@@ -12,8 +12,8 @@ import java.sql.Date;
 
 /**
  * 文件分片指令
- * @author admin
  *
+ * @author admin
  */
 @Data
 @NoArgsConstructor
@@ -29,11 +29,14 @@ public class FileProgressBean extends Msg {
     @DataBaseColumn("to_node_id")
     protected long toNodeId;        // 目标节点
 
-    @DataBaseColumn("source_url")
-    protected String sourceUrl;       // 文件URL
+    @DataBaseColumn("file_name")
+    protected String fileName;        // 文件名称
 
-    @DataBaseColumn("target_url")
-    protected String targetUrl;       // 文件URL
+    @DataBaseColumn("source_path")
+    protected String sourcePath;       // 文件URL
+
+    @DataBaseColumn("target_path")
+    protected String targetPath;       // 文件URL
 
     @DataBaseColumn("total_size")
     protected long totalSize;       // 文件总大小

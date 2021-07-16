@@ -25,6 +25,7 @@ import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -146,7 +147,7 @@ public class UpgradeClient implements Client {
                         ch.pipeline().addLast(new ClientOnlineHandler("客户端：" + nodeId, UpgradeClient.this));
                         ch.pipeline().addLast(new ShellCommandHandler(UpgradeClient.this));
                         ch.pipeline().addLast(new FileDescHandler(installDir));
-                        ch.pipeline().addLast(new FileProgressHandler(installDir));
+                        ch.pipeline().addLast(new FileProgressHandler(installDir, Paths.get(installDir, "temp").toString()));
                         ch.pipeline().addLast(new FileAskHandler(installDir));
                     }
 

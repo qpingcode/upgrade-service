@@ -10,9 +10,9 @@ import me.qping.upgrade.common.message.Msg;
  */
 @Data
 public class FileAsk extends Msg {
-    private String fileUrl;            // 文件路径
+    private String filePath;            // 文件路径
 
     public FileAsk(String filePath) {
-        this.fileUrl = filePath;
+        this.filePath = filePath;
     }
 }

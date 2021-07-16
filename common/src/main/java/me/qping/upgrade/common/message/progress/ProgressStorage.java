@@ -68,9 +68,9 @@ public class ProgressStorage {
     }
 
 
-    public FileProgress findByNodeIdAndFileUrl(long nodeId, String fileUrl) throws Exception {
+    public FileProgress findByNodeIdAndFilePathAndFileName(long nodeId, String filePath, String fileName) throws Exception {
         // 1 中间 2 结束 3 错误
-        List<FileProgressBean> list = database.queryList(FileProgressBean.class, "select * from FILE_PROGRESS where node_id = ? and source_url = ? order by begin_date desc limit 1", nodeId, fileUrl);
+        List<FileProgressBean> list = database.queryList(FileProgressBean.class, "select * from FILE_PROGRESS where node_id = ? and source_path = ? and file_name = ? order by begin_date desc limit 1", nodeId, filePath, fileName);
         if(list != null && list.size() > 0){
             FileProgress progress = new FileProgress();
             BeanUtil.copyProperties(list.get(0), progress);
@@ -80,12 +80,16 @@ public class ProgressStorage {
     }
 
 
-    public void insert(FileProgress progress) throws SQLException {
+    public int insert(FileProgress progress) throws SQLException {
         FileProgressBean progressBean = new FileProgressBean();
         BeanUtil.copyProperties(progress, progressBean);
 
         progressBean.setBeginDate(new Date(System.currentTimeMillis()));
-        int key = database.insert(progressBean);
+        int key = database.insertReturnPrimaryKey(progressBean, "id");
+
+        progress.setId(key);
+
+        return key;
     }
 
     public void tagEnd(int progressId) {
@@ -97,6 +101,10 @@ public class ProgressStorage {
     }
 
     public void tagError(int progressId, String errorMsg) {
+        if(errorMsg.length() > 800){
+            errorMsg = errorMsg.substring(0, 800);
+        }
+
 
     }
 

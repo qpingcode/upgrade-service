@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class Msg{
-    long messageId; // 消息id
+    protected long messageId; // 消息id
 }

@@ -2,7 +2,6 @@ package me.qping.upgrade.common.message.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import me.qping.upgrade.common.constant.FileOperFlag;
 import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.impl.FileDesc;
 import me.qping.upgrade.common.message.impl.FileProgress;
@@ -36,7 +35,7 @@ public class FileDescHandler extends SimpleChannelInboundHandler<FileDesc> {
             // 文件接收方查询传输进度，然后发请求给文件提供方，请求数据
             FileProgress progress = null;
             try {
-                progress = storage.findByNodeIdAndFileUrl(fileDesc.getNodeId(), fileDesc.getSourceUrl());
+                progress = storage.findByNodeIdAndFilePathAndFileName(fileDesc.getNodeId(), fileDesc.getSourcePath(), fileDesc.getFileName());
                 // 只有文件大小一致才可以断点续传，如果发生改变，无法断点续传
                 if (null != progress && fileDesc.getFileSize() == progress.getTotalSize()) {
                     progress.clearDataAndPrepareToRead();

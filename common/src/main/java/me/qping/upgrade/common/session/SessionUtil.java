@@ -1,13 +1,12 @@
 package me.qping.upgrade.common.session;
 
 import io.netty.channel.Channel;
+import me.qping.upgrade.common.constant.FileOperFlag;
 import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.constant.ResponseCode;
 import me.qping.upgrade.common.exception.ServerException;
-import me.qping.upgrade.common.message.Msg;
 import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.SnowFlakeId;
-import me.qping.upgrade.common.message.handler.FileTransferUtil;
 import me.qping.upgrade.common.message.impl.FileAsk;
 import me.qping.upgrade.common.message.impl.FileDesc;
 import me.qping.upgrade.common.message.impl.FileProgress;
@@ -116,9 +115,9 @@ public class SessionUtil {
         if(channel == null){
             throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
         }
-
-        channel.writeAndFlush(msg);
         MsgStorage.init(messageId);
+        channel.writeAndFlush(msg);
+
         return messageId;
     }
 
@@ -135,8 +134,9 @@ public class SessionUtil {
             throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
         }
 
-        channel.writeAndFlush(msg);
         MsgStorage.init(messageId);
+        channel.writeAndFlush(msg);
+
         return messageId;
     }
 
@@ -187,14 +187,14 @@ public class SessionUtil {
      * @param clientFilePath  客户端文件路径
      * @param targetPath
      */
-    public static void transferFrom(long nodeId, String clientFilePath, long clientFileSize, String targetPath, boolean breakPointResume) throws ServerException {
+    public static void transferFrom(long nodeId, String clientFilePath, long clientFileSize, String clientFileName, String targetPath, boolean breakPointResume) throws ServerException {
 
         long messageId = messageIdGen.nextId();
         ProgressStorage storage = ProgressStorage.getInstance();
         FileProgress progress = null;
         if(breakPointResume){
             try {
-                progress = storage.findByNodeIdAndFileUrl(nodeId, clientFilePath);
+                progress = storage.findByNodeIdAndFilePathAndFileName(nodeId, clientFilePath, clientFileName);
                 if (null != progress) {
                     progress.clearDataAndPrepareToRead();
                     progress.setMessageId(messageId);
@@ -209,13 +209,17 @@ public class SessionUtil {
             progress = new FileProgress();
             progress.setMessageId(messageId);
             progress.setNodeId(nodeId);
-            progress.setSourceUrl(clientFilePath);
-            progress.setTargetUrl(targetPath);
 
+            progress.setSourcePath(clientFilePath);
             progress.setTotalSize(clientFileSize);
+            progress.setFileName(clientFileName);
+
+            progress.setTargetPath(targetPath);
             progress.setChunkSize(DEFAULT_CHUCK_SIZE);
             progress.setReadPosition(0);
             progress.setStatus(FileStatus.CENTER);
+
+            progress.clearDataAndPrepareToRead();
 
             try {
                 storage.insert(progress);
@@ -229,8 +233,13 @@ public class SessionUtil {
         if(channel == null){
             throw new ServerException(ERR_NODE_OFFLINE, "客户端已下线" + nodeId);
         }
-        channel.writeAndFlush(progress);
-        System.out.println("开始接收文件：" + clientFilePath);
 
+        channel.writeAndFlush(progress);
+
+
+        System.out.println("开始接收文件：" + clientFilePath);
     }
+
+
+
 }

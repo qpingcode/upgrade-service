@@ -26,24 +26,23 @@ public class ShellCommandHandler extends SimpleChannelInboundHandler<ShellComman
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ShellCommand msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ShellCommand command) throws Exception {
         new Thread(new Runnable() {
             @Override
             public void run() {
 
-                System.out.println("开始执行: " + msg.toString());
+                System.out.println("开始执行: " + command.toString());
 
-                ShellCommandResponse reply = new ShellCommandResponse();
-                reply.setMessageId(msg.getMessageId());
+                ShellCommandResponse reply = new ShellCommandResponse(command.getMessageId());
                 try{
-                    String result = RuntimeUtil.execForStr((String) msg.getCommand());
+                    String result = RuntimeUtil.execForStr((String) command.getCommand());
                     reply.setMessage(result);
                     reply.setCode(ResponseCode.SUCCESS);
                 }catch (IORuntimeException e){
                     reply.setMessage(e.getMessage());
                     reply.setCode(ResponseCode.ERR_COMMAND_ERROR);
                 }
-                System.out.println("结束执行: " + msg.toString());
+                System.out.println("结束执行: " + command.toString());
                 ctx.writeAndFlush(reply);
 
             }
