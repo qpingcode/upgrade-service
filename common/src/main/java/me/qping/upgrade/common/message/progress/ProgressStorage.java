@@ -2,6 +2,7 @@ package me.qping.upgrade.common.message.progress;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.resource.ClassPathResource;
+import cn.hutool.core.lang.Assert;
 import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.impl.FileProgress;
 import me.qping.utils.database.DataBaseUtilBuilder;
@@ -10,8 +11,8 @@ import me.qping.utils.database.util.MetaDataUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Date;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -83,10 +84,19 @@ public class ProgressStorage {
 
 
     public int insert(FileProgress progress, Long toNodeId) throws SQLException {
+
+        Assert.notNull(progress);
+        Assert.notBlank(progress.getFileName());
+        Assert.notBlank(progress.getSourcePath());
+        Assert.notBlank(progress.getTargetPath());
+        Assert.isTrue(progress.getFileName().length() < 800);
+        Assert.isTrue(progress.getSourcePath().length() < 800);
+        Assert.isTrue(progress.getTargetPath().length() < 800);
+
         FileProgressBean progressBean = new FileProgressBean();
         BeanUtil.copyProperties(progress, progressBean);
 
-        progressBean.setBeginDate(new Date(System.currentTimeMillis()));
+        progressBean.setBeginDate(new Date());
         progressBean.setToNodeId(toNodeId);
 
         int key = database.insertReturnPrimaryKey(progressBean, "id");
@@ -97,7 +107,7 @@ public class ProgressStorage {
     }
 
     public void tagEnd(int progressId, long position) throws SQLException {
-        database.update("update FILE_PROGRESS set read_position = ?, status = ?  where id = ?", position, FileStatus.END, progressId);
+        database.update("update FILE_PROGRESS set read_position = ?, status = ?, end_date = ?  where id = ?", position, FileStatus.END, new Date(), progressId);
     }
 
     public void tagProgress(int progressId, long totalSize, long position) throws SQLException {
@@ -108,7 +118,7 @@ public class ProgressStorage {
         if(errorMsg.length() > 800){
             errorMsg = errorMsg.substring(0, 800);
         }
-        database.update("update FILE_PROGRESS set err_msg = ?, status = 3 where id = ? ", errorMsg, progressId);
+        database.update("update FILE_PROGRESS set err_msg = ?, status = ? where id = ? ", errorMsg, FileStatus.ERROR, progressId);
     }
 
     public List<FileProgressBean> findAll() throws IllegalAccessException, SQLException, InstantiationException {

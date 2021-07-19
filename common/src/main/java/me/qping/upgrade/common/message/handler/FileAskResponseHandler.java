@@ -3,10 +3,7 @@ package me.qping.upgrade.common.message.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import me.qping.upgrade.common.message.MsgStorage;
-import me.qping.upgrade.common.message.impl.FileAsk;
 import me.qping.upgrade.common.message.impl.FileAskResponse;
-import me.qping.upgrade.common.message.impl.FileDesc;
-import me.qping.upgrade.common.message.progress.ProgressStorage;
 
 import java.io.File;
 

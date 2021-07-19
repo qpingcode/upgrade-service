@@ -2,13 +2,11 @@ package me.qping.upgrade.common.message.progress;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.message.Msg;
-import me.qping.upgrade.common.message.impl.FileDesc;
 import me.qping.utils.database.bean.DataBaseColumn;
 import me.qping.utils.database.bean.DataBaseTable;
 
-import java.sql.Date;
+import java.util.Date;
 
 /**
  * 文件分片指令

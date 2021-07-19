@@ -29,7 +29,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
 
     String basePath;
     String tempPath;
-    long currentNodeId;
+    static long currentNodeId;
 
     static List<FileProgressListener> listeners = new CopyOnWriteArrayList<>();
 
@@ -118,16 +118,12 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
                 });
 
 
-                // 回写一个end给read
-                // 为什么end和error都要回写给read？
-                // 因为当服务器端下发文件时，写文件发生在客户端，读文件发生在服务器，当写完了不告诉服务器的话，服务器无法知道整个流程结束了。
 
             }
 
             // 请求下一块数据
             progress.setReadPosition(readPosition + readBytes);
             progress.clearDataAndPrepareToRead();
-
         } catch (Exception e) {
             listeners.forEach(listener -> {
                 listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), "写入错误：" + e.getMessage());
@@ -141,6 +137,8 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             progress.setErrMsg(e.getMessage());
         }
 
+        // 原则上写处理器发现已经end了，就停止所有流程
+        // 客户端 write 时发现 end，需要 回写一个end给read
         if(currentNodeId == SERVER_NODE_ID && (progress.getStatus() == FileStatus.ERROR || progress.getStatus() == FileStatus.END)){
             // 服务器
             return null;
@@ -197,22 +195,11 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
                 listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
             });
 
-        } else if(readBytes == 0){
-            if(currentNodeId == SERVER_NODE_ID && (progress.getStatus() == FileStatus.ERROR || progress.getStatus() == FileStatus.END)){
-                // 服务器
-                return null;
-            }
-
         } else if(readBytes < progress.getChunkSize()){
             progress.setStatus(FileStatus.END);
-
-
         } else if(readBytes == progress.getChunkSize()){
             progress.setStatus(FileStatus.CENTER);
         }
-
-
-
         return progress;
     }
 

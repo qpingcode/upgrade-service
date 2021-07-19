@@ -181,6 +181,7 @@ public class UpgradeClient implements Client {
         try {
             synchronized (bootstrap) {
 
+                System.out.println("尝试连接服务器 " + Host + ":" + Port);
                 final ChannelFuture cf = bootstrap.connect(ServerConstant.Host, ServerConstant.Port);
                 cf.addListener(new ChannelFutureListener() {
                     @Override

@@ -3,6 +3,7 @@ package me.qping.upgrade.common.message.codec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import me.qping.upgrade.common.constant.MsgType;
 
 import java.util.List;
 
@@ -26,6 +27,11 @@ public class ObjDecoder extends ByteToMessageDecoder {
 
         // 读取消息类型
         byte msgType = in.readByte();
+
+        if(msgType == MsgType.REGISTER.val()){
+            System.out.println("zhuce");
+        }
+
         Class<?> genericClass = Serialization.getClass(msgType);
         byte[] data = new byte[in.readableBytes()];
         in.readBytes(data);
