@@ -47,7 +47,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FileProgress progress) {
 
-        if(transferStopList.contains(progress.getId())){
+        if(transferStopList.containsKey(progress.getId())){
             System.out.println("传输任务，id： " + progress.getId() + " 已被手动终止。");
             return;
         }

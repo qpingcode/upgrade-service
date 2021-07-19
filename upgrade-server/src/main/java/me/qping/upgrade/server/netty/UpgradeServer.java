@@ -89,7 +89,8 @@ public class UpgradeServer {
         FileProgressHandler.addListener(new FileProgressListener() {
             @Override
             public void end(int progressId, long fileNodeId, String sourcePath, long position) {
-                System.out.println(String.format("文件传输成功，源路径：%s 源节点：%s", sourcePath, fileNodeId));
+                System.out.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s",
+                        (fileNodeId == SERVER_NODE_ID ? "文件下发成功" : "文件接收成功"), progressId, sourcePath, fileNodeId));
                 try {
                     storage.tagEnd(progressId, position);
                 } catch (SQLException e) {
@@ -108,7 +109,8 @@ public class UpgradeServer {
 
             @Override
             public void error(int progressId, long fileNodeId, String sourcePath, String errorMsg) {
-                System.err.println(String.format("文件传输出错啦，源路径：%s 源节点：%s 错误信息：%s", sourcePath, fileNodeId, errorMsg));
+                System.err.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s 错误信息：%s",
+                        (fileNodeId == SERVER_NODE_ID ? "文件下发出现错误" : "文件接收出现错误"), progressId, sourcePath, fileNodeId, errorMsg));
                 try {
                     storage.tagError(progressId, errorMsg);
                 } catch (SQLException e) {

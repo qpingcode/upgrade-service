@@ -197,7 +197,8 @@ public class SessionUtil {
 
         FileProgress writeProgress = FileProgressHandler.readData(progress);
         channel.writeAndFlush(writeProgress);
-        System.out.println("开始下发文件：" + serverFilePath + "，到客户端：" + nodeId );
+        System.out.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s", "文件下发开始", progress.getId(), progress.getSourcePath(), progress.getNodeId()));
+
         return writeProgress.getId();
     }
 
@@ -259,7 +260,7 @@ public class SessionUtil {
 
         channel.writeAndFlush(progress);
 
-        System.out.println("开始接收文件：" + clientFilePath);
+        System.out.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s", "文件接收开始", progress.getId(), progress.getSourcePath(), progress.getNodeId()));
         return progress.getId();
 
 
