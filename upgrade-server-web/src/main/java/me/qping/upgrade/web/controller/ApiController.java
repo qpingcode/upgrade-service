@@ -1,4 +1,4 @@
-package me.qping.upgrade.server.controller;
+package me.qping.upgrade.web.controller;
 
 import cn.hutool.core.lang.Assert;
 import io.netty.channel.Channel;
@@ -33,9 +33,6 @@ import static me.qping.upgrade.common.constant.ServerConstant.JdbcPassword;
  **/
 @Controller
 public class ApiController {
-
-    @Autowired
-    UpgradeServer upgradeServer;
 
     /**
      * 展示客户端连接列表

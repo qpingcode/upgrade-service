@@ -17,7 +17,6 @@ import me.qping.upgrade.common.message.impl.FileProgress;
 import me.qping.upgrade.common.message.impl.FileProgressListener;
 import me.qping.upgrade.common.message.sql.ProgressStorage;
 import me.qping.upgrade.server.netty.handler.ServerOnlineHandler;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
@@ -26,7 +25,6 @@ import java.sql.SQLException;
 import static me.qping.upgrade.common.constant.ServerConstant.*;
 
 
-@Component
 public class UpgradeServer {
 
     ServerBootstrap bootstrap = new ServerBootstrap();
@@ -145,11 +143,5 @@ public class UpgradeServer {
         new UpgradeServer().start();
     }
 
-
-    @PostConstruct
-    public void autoStart() throws Exception {
-        UpgradeServer server = new UpgradeServer();
-        server.start();
-    }
 
 }
