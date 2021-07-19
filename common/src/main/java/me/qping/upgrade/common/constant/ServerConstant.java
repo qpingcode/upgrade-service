@@ -36,8 +36,8 @@ public class ServerConstant {
 
 
 
-    public static final int MSG_STORAGE_MSG_TIMEOUT = 60 * 1000;
-    public static final int MSG_STORAGE_CLEAN_SLEEP_INTERVAL = 30 * 1000;
+    public static final int MSG_STORAGE_MSG_TIMEOUT = 3600 * 1000;
+    public static final int MSG_STORAGE_CLEAN_SLEEP_INTERVAL = 300 * 1000;
 
 
     public static final String JdbcUrl = "jdbc:h2:file:/Users/qping/test/.h2/upgrade_server_db;AUTO_SERVER=TRUE";
