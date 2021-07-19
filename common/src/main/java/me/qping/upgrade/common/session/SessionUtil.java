@@ -31,6 +31,7 @@ import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
 public class SessionUtil {
 
     public static final ConcurrentHashMap<Long, Channel> nodeChannelMap = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<Integer, Integer> transferStopList = new ConcurrentHashMap<>();
     public static SnowFlakeId messageIdGen = new SnowFlakeId(SERVER_NODE_ID,  1);
 
     public static void main(String[] args) {
@@ -265,5 +266,7 @@ public class SessionUtil {
     }
 
 
-
+    public static void transferStop(int progressId) {
+        transferStopList.put(progressId, 0);
+    }
 }

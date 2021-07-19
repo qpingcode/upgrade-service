@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static me.qping.upgrade.common.constant.ServerConstant.SERVER_NODE_ID;
+import static me.qping.upgrade.common.session.SessionUtil.transferStopList;
 
 /**
  * @ClassName NettyClient
@@ -45,6 +46,12 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FileProgress progress) {
+
+        if(transferStopList.contains(progress.getId())){
+            System.out.println("传输任务，id： " + progress.getId() + " 已被手动终止。");
+            return;
+        }
+
         if(progress.getFlag() == FileOperFlag.READ){
             progress = readData(progress);
         }else if(progress.getFlag() == FileOperFlag.WRITE){

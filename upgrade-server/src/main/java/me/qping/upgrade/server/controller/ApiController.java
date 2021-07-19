@@ -129,7 +129,7 @@ public class ApiController {
      * @param sourcePath    服务器文件路径
      * @param targetPath    客户端存储路径
      */
-    @RequestMapping(value = "/node/transferTo")
+    @RequestMapping(value = "/transfer/to")
     @ResponseBody
     public int transferTo(long nodeId, String sourcePath, String targetPath){
         try {
@@ -153,7 +153,7 @@ public class ApiController {
      * @param sourcePath    客户端文件路径
      * @param targetPath    服务器存储路径
      */
-    @RequestMapping(value = "/node/transferFrom")
+    @RequestMapping(value = "/transfer/from")
     @ResponseBody
     public int transferFrom(long nodeId, String sourcePath, String targetPath){
         try {
@@ -182,6 +182,19 @@ public class ApiController {
 
             FileBean f = result.getFileBeans().get(0);
             int progressId = SessionUtil.transferFrom(nodeId, f.getFilePath(), f.getFileSize(), f.getFileName(), targetPath, false);
+
+            return progressId;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    @RequestMapping(value = "/transfer/stop")
+    @ResponseBody
+    public int transferStop(int progressId){
+        try {
+            SessionUtil.transferStop(progressId);
 
             return progressId;
         } catch (Exception e) {
