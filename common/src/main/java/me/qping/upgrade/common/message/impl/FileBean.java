@@ -34,4 +34,13 @@ public class FileBean {
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
+
+    @Override
+    public String toString() {
+        return "FileBean{" +
+                "filePath='" + filePath + '\'' +
+                ", fileSize=" + fileSize +
+                ", fileName='" + fileName + '\'' +
+                '}';
+    }
 }

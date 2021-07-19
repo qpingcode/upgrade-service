@@ -13,6 +13,7 @@ import me.qping.upgrade.common.message.codec.ObjDecoder;
 import me.qping.upgrade.common.message.codec.ObjEncoder;
 import me.qping.upgrade.common.message.codec.Serialization;
 import me.qping.upgrade.common.message.handler.*;
+import me.qping.upgrade.common.message.impl.FileProgress;
 import me.qping.upgrade.common.message.impl.FileProgressListener;
 import me.qping.upgrade.common.message.progress.ProgressStorage;
 import me.qping.upgrade.server.netty.handler.ServerOnlineHandler;
@@ -88,31 +89,45 @@ public class UpgradeServer {
         ProgressStorage storage = ProgressStorage.getInstance();
         FileProgressHandler.addListener(new FileProgressListener() {
             @Override
-            public void end(int progressId, long fileNodeId, String sourcePath, long position) {
+            public void stop(FileProgress progress) {
                 System.out.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s",
-                        (fileNodeId == SERVER_NODE_ID ? "文件下发成功" : "文件接收成功"), progressId, sourcePath, fileNodeId));
+                        (progress.getNodeId() == SERVER_NODE_ID ? "文件下发被手动终止" : "文件接收被手动终止"),
+                        progress.getId(), progress.getSourcePath(), progress.getNodeId()));
                 try {
-                    storage.tagEnd(progressId, position);
+                    storage.tagStop(progress.getId());
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
 
             @Override
-            public void progress(int progressId, long fileNodeId, String sourcePath, long totalSize, long position) {
+            public void end(FileProgress progress, long position) {
+                System.out.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s",
+                        (progress.getNodeId() == SERVER_NODE_ID ? "文件下发成功" : "文件接收成功"),
+                        progress.getId(), progress.getSourcePath(), progress.getNodeId()));
                 try {
-                    storage.tagProgress(progressId, totalSize, position);
+                    storage.tagEnd(progress.getId(), position);
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
 
             @Override
-            public void error(int progressId, long fileNodeId, String sourcePath, String errorMsg) {
+            public void progress(FileProgress progress, long position) {
+                try {
+                    storage.tagProgress(progress.getId(), progress.getTotalSize(), position);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void error(FileProgress progress, String errorMsg) {
                 System.err.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s 错误信息：%s",
-                        (fileNodeId == SERVER_NODE_ID ? "文件下发出现错误" : "文件接收出现错误"), progressId, sourcePath, fileNodeId, errorMsg));
+                        (progress.getNodeId() == SERVER_NODE_ID ? "文件下发出现错误" : "文件接收出现错误"),
+                        progress.getId(), progress.getSourcePath(), progress.getNodeId(), errorMsg));
                 try {
-                    storage.tagError(progressId, errorMsg);
+                    storage.tagError(progress.getId(), errorMsg);
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }

@@ -48,7 +48,10 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
     protected void channelRead0(ChannelHandlerContext ctx, FileProgress progress) {
 
         if(transferStopList.containsKey(progress.getId())){
-            System.out.println("传输任务，id： " + progress.getId() + " 已被手动终止。");
+            FileProgress finalProgress = progress;
+            listeners.forEach(listener -> {
+                listener.stop(finalProgress);
+            });
             return;
         }
 
@@ -81,7 +84,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
     public FileProgress writeDate(FileProgress progress) {
         if(progress.getStatus() == FileStatus.ERROR){
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
+                listener.error(progress, progress.getErrMsg());
             });
             return null;
         }
@@ -104,7 +107,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             if(readBytes > 0){
                 FileTransferUtil.writeFile(uploadTempFilePath, readPosition, progress.getBytes());
                 listeners.forEach(listener -> {
-                    listener.progress(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getTotalSize(), progress.getReadPosition() + readBytes);
+                    listener.progress(progress, progress.getReadPosition() + readBytes);
                 });
 
             }
@@ -120,7 +123,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
                 Files.move(uploadTempFilePath, uploadPath.getParent().resolve(uploadPath.getFileName()), StandardCopyOption.ATOMIC_MOVE);
 
                 listeners.forEach(listener -> {
-                    listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getReadPosition() + readBytes);
+                    listener.end(progress, progress.getReadPosition() + readBytes);
                 });
 
 
@@ -132,7 +135,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             progress.clearDataAndPrepareToRead();
         } catch (Exception e) {
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), "写入错误：" + e.getMessage());
+                listener.error(progress, "写入错误：" + e.getMessage());
             });
 
 
@@ -165,21 +168,21 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
         if(FileStatus.ERROR == progress.getStatus()){
             // 这里的错误来自 FileProgressHandler.writeDate 方法
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
+                listener.error(progress, progress.getErrMsg());
             });
             return null;
         }
 
         if (FileStatus.END == progress.getStatus()) {
             listeners.forEach(listener -> {
-                listener.end(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getReadPosition());
+                listener.end(progress, progress.getReadPosition());
             });
             return null;
         }
 
         // 读的一端能记录进度
         listeners.forEach(listener -> {
-            listener.progress(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getTotalSize(), progress.getReadPosition());
+            listener.progress(progress, progress.getReadPosition());
         });
 
         FileData fileData = FileTransferUtil.readFile(
@@ -198,7 +201,7 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
             progress.setErrMsg("读取错误：" + fileData.getErr());
 
             listeners.forEach(listener -> {
-                listener.error(progress.getId(), progress.getNodeId(), progress.getSourcePath(), progress.getErrMsg());
+                listener.error(progress, progress.getErrMsg());
             });
 
         } else if(readBytes < progress.getChunkSize()){

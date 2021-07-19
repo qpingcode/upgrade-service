@@ -197,6 +197,7 @@ public class SessionUtil {
 
         FileProgress writeProgress = FileProgressHandler.readData(progress);
         channel.writeAndFlush(writeProgress);
+
         System.out.println(String.format("%s，progressId：%s 源路径：%s 源节点：%s", "文件下发开始", progress.getId(), progress.getSourcePath(), progress.getNodeId()));
 
         return writeProgress.getId();

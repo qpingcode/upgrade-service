@@ -121,6 +121,11 @@ public class ProgressStorage {
         database.update("update FILE_PROGRESS set err_msg = ?, status = ? where id = ? ", errorMsg, FileStatus.ERROR, progressId);
     }
 
+    public void tagStop(int progressId) throws SQLException {
+        database.update("update FILE_PROGRESS set status = ?, end_date = ?  where id = ?", FileStatus.STOP, new Date(), progressId);
+    }
+
+
     public List<FileProgressBean> findAll() throws IllegalAccessException, SQLException, InstantiationException {
         return database.queryList(FileProgressBean.class, "select * from FILE_PROGRESS");
     }
