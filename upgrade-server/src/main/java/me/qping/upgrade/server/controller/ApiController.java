@@ -2,14 +2,15 @@ package me.qping.upgrade.server.controller;
 
 import cn.hutool.core.lang.Assert;
 import io.netty.channel.Channel;
+import me.qping.upgrade.common.constant.ServerConstant;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.impl.FileAskResponse;
 import me.qping.upgrade.common.message.impl.FileBean;
 import me.qping.upgrade.common.message.impl.ForceOffline;
 import me.qping.upgrade.common.message.impl.ShellCommandResponse;
-import me.qping.upgrade.common.message.progress.FileProgressBean;
-import me.qping.upgrade.common.message.progress.ProgressStorage;
+import me.qping.upgrade.common.message.sql.FileProgressBean;
+import me.qping.upgrade.common.message.sql.ProgressStorage;
 import me.qping.upgrade.common.session.Session;
 import me.qping.upgrade.common.session.SessionUtil;
 import me.qping.upgrade.server.netty.UpgradeServer;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static me.qping.upgrade.common.constant.ServerConstant.JdbcPassword;
 
 /**
  * @ClassName IndexController
@@ -237,5 +240,20 @@ public class ApiController {
         }
         return null;
     }
+
+    /**
+     * 传输文件列表
+     */
+    @RequestMapping(value = "/transfer/initdb")
+    @ResponseBody
+    public boolean transferInitDB(){
+        try {
+            ProgressStorage.getInstance().init(ServerConstant.JdbcUrl, ServerConstant.JdbcUsername, JdbcPassword, true);
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException("初始化数据库失败：" + e.getMessage());
+        }
+    }
+
 
 }

@@ -15,7 +15,7 @@ import me.qping.upgrade.common.message.codec.Serialization;
 import me.qping.upgrade.common.message.handler.*;
 import me.qping.upgrade.common.message.impl.FileProgress;
 import me.qping.upgrade.common.message.impl.FileProgressListener;
-import me.qping.upgrade.common.message.progress.ProgressStorage;
+import me.qping.upgrade.common.message.sql.ProgressStorage;
 import me.qping.upgrade.server.netty.handler.ServerOnlineHandler;
 import org.springframework.stereotype.Component;
 
@@ -81,7 +81,7 @@ public class UpgradeServer {
         Serialization.init();
 
         try {
-            ProgressStorage.getInstance().init(ServerConstant.JdbcUrl, ServerConstant.JdbcUsername, JdbcPassword);
+            ProgressStorage.getInstance().init(ServerConstant.JdbcUrl, ServerConstant.JdbcUsername, JdbcPassword, false);
         } catch (Exception e) {
             throw new RuntimeException("初始化数据库失败：" + e.getMessage());
         }

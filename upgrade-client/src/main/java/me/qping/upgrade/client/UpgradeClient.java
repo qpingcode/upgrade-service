@@ -19,7 +19,7 @@ import me.qping.upgrade.common.message.codec.Serialization;
 import me.qping.upgrade.common.message.handler.FileAskHandler;
 import me.qping.upgrade.common.message.handler.FileProgressHandler;
 import me.qping.upgrade.common.message.handler.ShellCommandHandler;
-import me.qping.upgrade.common.message.progress.ProgressStorage;
+import me.qping.upgrade.common.message.sql.ProgressStorage;
 import me.qping.upgrade.common.message.retry.ExponentialBackOffRetry;
 import me.qping.upgrade.common.message.retry.RetryPolicy;
 
@@ -112,7 +112,7 @@ public class UpgradeClient implements Client {
         String jdbcUsername = properties.getProperty("jdbc_username");
         String jdbcPassword = properties.getProperty("jdbc_password");
         try {
-            ProgressStorage.getInstance().init(jdbcUrl, jdbcUsername, jdbcPassword);
+            ProgressStorage.getInstance().init(jdbcUrl, jdbcUsername, jdbcPassword, false);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("初始化数据库失败：" + e.getMessage());

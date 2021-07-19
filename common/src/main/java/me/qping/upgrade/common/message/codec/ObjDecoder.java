@@ -28,10 +28,6 @@ public class ObjDecoder extends ByteToMessageDecoder {
         // 读取消息类型
         byte msgType = in.readByte();
 
-        if(msgType == MsgType.REGISTER.val()){
-            System.out.println("zhuce");
-        }
-
         Class<?> genericClass = Serialization.getClass(msgType);
         byte[] data = new byte[in.readableBytes()];
         in.readBytes(data);

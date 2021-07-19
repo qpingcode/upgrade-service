@@ -1,4 +1,4 @@
-package me.qping.upgrade.common.message.progress;
+package me.qping.upgrade.common.message.sql;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.resource.ClassPathResource;
@@ -39,10 +39,10 @@ public class ProgressStorage {
 
     MetaDataUtil database;
 
-    public void init(String url, String username, String password) throws ClassNotFoundException, SQLException {
+    public void init(String url, String username, String password, boolean force) throws ClassNotFoundException, SQLException {
         database = DataBaseUtilBuilder.init(url, username, password).build();
 
-        if(database.getTableInfo("FILE_PROGRESS") == null){
+        if(database.getTableInfo("FILE_PROGRESS") == null || force){
 
             String content = null;
             BufferedReader reader = null;
@@ -64,8 +64,6 @@ public class ProgressStorage {
             }
 
             System.out.println(content);
-
-
         }
 
     }

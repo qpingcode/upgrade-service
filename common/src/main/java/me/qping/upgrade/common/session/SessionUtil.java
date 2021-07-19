@@ -8,7 +8,7 @@ import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.handler.FileProgressHandler;
 import me.qping.upgrade.common.message.impl.*;
-import me.qping.upgrade.common.message.progress.ProgressStorage;
+import me.qping.upgrade.common.message.sql.ProgressStorage;
 
 import java.io.File;
 import java.sql.SQLException;

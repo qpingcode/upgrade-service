@@ -1,4 +1,4 @@
-package me.qping.upgrade.common.message.progress;
+package me.qping.upgrade.common.message.sql;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
