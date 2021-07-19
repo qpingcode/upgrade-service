@@ -45,7 +45,6 @@ public class FileProgressHandler extends SimpleChannelInboundHandler<FileProgres
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FileProgress progress) {
-        System.out.println(progress);
         if(progress.getFlag() == FileOperFlag.READ){
             progress = readData(progress);
         }else if(progress.getFlag() == FileOperFlag.WRITE){

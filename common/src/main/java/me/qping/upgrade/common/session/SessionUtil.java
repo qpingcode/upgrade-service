@@ -1,14 +1,12 @@
 package me.qping.upgrade.common.session;
 
 import io.netty.channel.Channel;
-import me.qping.upgrade.common.constant.FileOperFlag;
 import me.qping.upgrade.common.constant.FileStatus;
 import me.qping.upgrade.common.constant.ResponseCode;
 import me.qping.upgrade.common.exception.ServerException;
 import me.qping.upgrade.common.message.MsgStorage;
 import me.qping.upgrade.common.message.SnowFlakeId;
 import me.qping.upgrade.common.message.handler.FileProgressHandler;
-import me.qping.upgrade.common.message.handler.FileTransferUtil;
 import me.qping.upgrade.common.message.impl.*;
 import me.qping.upgrade.common.message.progress.ProgressStorage;
 
@@ -146,7 +144,7 @@ public class SessionUtil {
      * @param serverFilePath    服务器文件路径
      * @param targetPath
      */
-    public static void transferTo(long nodeId, String serverFilePath, String targetPath, boolean breakPointResume) throws ServerException {
+    public static int transferTo(long nodeId, String serverFilePath, String targetPath, boolean breakPointResume) throws ServerException {
         File file = new File(serverFilePath);
 
         if(!file.exists()){
@@ -199,18 +197,19 @@ public class SessionUtil {
         FileProgress writeProgress = FileProgressHandler.readData(progress);
         channel.writeAndFlush(writeProgress);
         System.out.println("开始下发文件：" + serverFilePath + "，到客户端：" + nodeId );
+        return writeProgress.getId();
     }
 
 
     /**
      * 从客户端上传文件到服务器
      * @param nodeId          客户端id
-     * @param clientFileSize  客户端大小字节数
      * @param clientFilePath  客户端文件路径（必须到文件名）
+     * @param clientFileSize  客户端大小字节数
      * @param targetPath      服务器存储路径（必须到文件名）
      * @param breakPointResume  是否断点续传
      */
-    public static void transferFrom(long nodeId, String clientFilePath, long clientFileSize, String clientFileName, String targetPath, boolean breakPointResume) throws ServerException {
+    public static int transferFrom(long nodeId, String clientFilePath, long clientFileSize, String clientFileName, String targetPath, boolean breakPointResume) throws ServerException {
 
         long messageId = messageIdGen.nextId();
         ProgressStorage storage = ProgressStorage.getInstance();
@@ -259,8 +258,10 @@ public class SessionUtil {
 
         channel.writeAndFlush(progress);
 
-
         System.out.println("开始接收文件：" + clientFilePath);
+        return progress.getId();
+
+
     }
 
 

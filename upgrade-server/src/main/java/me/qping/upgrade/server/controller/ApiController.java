@@ -131,17 +131,19 @@ public class ApiController {
      */
     @RequestMapping(value = "/node/transferTo")
     @ResponseBody
-    public void transferTo(long nodeId, String sourcePath, String targetPath){
+    public int transferTo(long nodeId, String sourcePath, String targetPath){
         try {
 
             Assert.notBlank(sourcePath);
             Assert.notBlank(targetPath);
             Assert.isTrue(nodeId >= 0);
 
-            SessionUtil.transferTo(nodeId, sourcePath, targetPath, false);
+            int progressId = SessionUtil.transferTo(nodeId, sourcePath, targetPath, false);
+            return progressId;
         } catch (ServerException e) {
             e.printStackTrace();
         }
+        return -1;
     }
 
 
@@ -153,7 +155,7 @@ public class ApiController {
      */
     @RequestMapping(value = "/node/transferFrom")
     @ResponseBody
-    public void transferFrom(long nodeId, String sourcePath, String targetPath){
+    public int transferFrom(long nodeId, String sourcePath, String targetPath){
         try {
 
             Assert.notBlank(sourcePath);
@@ -165,25 +167,27 @@ public class ApiController {
             FileAskResponse result = MsgStorage.get(messageId, 10 * 1000);
             if(result == null){
                 System.err.println("客户端的文件查看超时, 客户端id： " + nodeId + " 文件：" +sourcePath);
-                return;
+                return -1;
             }
 
             if(result.isDir()){
                 System.err.println("无法复制目录, 客户端id： " + nodeId + " 文件：" +sourcePath);
-                return;
+                return -1;
             }
 
             if(!result.isExists()){
                 System.err.println("客户端的文件不存在, 客户端id： " + nodeId + " 文件：" +sourcePath);
-                return;
+                return -1;
             }
 
             FileBean f = result.getFileBeans().get(0);
-            SessionUtil.transferFrom(nodeId, f.getFilePath(), f.getFileSize(), f.getFileName(), targetPath, false);
+            int progressId = SessionUtil.transferFrom(nodeId, f.getFilePath(), f.getFileSize(), f.getFileName(), targetPath, false);
 
+            return progressId;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return -1;
     }
 
 
